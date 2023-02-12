@@ -77,4 +77,6 @@ dependencies {
     testImplementation "org.orbit-mvi:orbit-test:$orbit_mvi_version"
 
     implementation "io.insert-koin:koin-android:$koin_version"
+    implementation "com.fasterxml.jackson.module:jackson-module-kotlin:2.13.4"
+    implementation "com.squareup.retrofit2:retrofit:2.9.0"
 }

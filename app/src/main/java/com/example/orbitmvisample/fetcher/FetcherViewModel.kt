@@ -2,6 +2,7 @@ package com.example.orbitmvisample.fetcher
 
 import androidx.lifecycle.ViewModel
 import com.appmattus.layercache.Cache
+import com.example.orbitmvisample.apierrorhandler.ApiErrorHandler
 import kotlinx.coroutines.*
 import org.orbitmvi.orbit.ContainerHost
 import org.orbitmvi.orbit.syntax.simple.intent
@@ -14,6 +15,7 @@ import timber.log.Timber
  */
 open class FetcherViewModel<T>(
     private val fetcherService: FetcherService<T>,
+    private val errorHandler: ApiErrorHandler,
     private val cacheService: Cache<Any, Any>? = null
 ) : ViewModel(), ContainerHost<Response<T>, Nothing> {
 
@@ -36,7 +38,7 @@ open class FetcherViewModel<T>(
      * Makes sure that a cache key is unique by adding [FetcherService] name.
      * This could be needed in case of sharing a cache service between several services.
      */
-    open fun getCacheKey(arguments: FetcherArguments?): Any? {
+    open fun getCacheKey(arguments: FetcherArguments<T>?): Any? {
         return arguments?.getCacheKey()?.let {
             listOf(fetcherService.name(), it)
         }
@@ -45,12 +47,12 @@ open class FetcherViewModel<T>(
     /**
      * Sends request to VM to start for emitting [Response] states
      * @param arguments arguments of [FetcherService]
-     * @param clearCache if true - then removes a value from the cache before fetching it from [FetcherService]
+     * @param cleanCache if true - then removes a value from the cache before fetching it from [FetcherService]
      */
     @Suppress("UNCHECKED_CAST")
     fun request(
-        arguments: FetcherArguments? = null,
-        clearCache: Boolean = false
+        arguments: FetcherArguments<T>? = null,
+        cleanCache: Boolean = false
     ) = intent {
 
         // build response info
@@ -61,12 +63,8 @@ open class FetcherViewModel<T>(
 
         if (key != null) {
             // clear cache if required
-            if (clearCache) {
-                try {
-                    cacheService?.evict(key)
-                } catch (e: Exception) {
-                    Timber.e(e, "Error on cache clearing with key=$key")
-                }
+            if (cleanCache) {
+                cleanCache(key)
             } else {
                 // get a value from the cache
                 val value = try {
@@ -92,16 +90,24 @@ open class FetcherViewModel<T>(
 
         // request a value from fetcher
         val value = try {
-            fetcherService.request(arguments)
+            withContext(Dispatchers.IO) {
+                fetcherService.request(arguments)
+            }
         } catch (e: Exception) {
             Timber.e(e, "Error on requesting to fetcher with args=$arguments")
-            // state of response with error data fetching
-            reduce { Response.Error.Exception(e, info.copy(origin = ResponseOrigin.Fetcher)) }
+            // convert the exception to ApiException and handle it by default
+            val apiException = errorHandler.handle(e)
+            // then state of response with the error on data fetching
+            reduce {
+                Response.Error.Exception(
+                    apiException, info.copy(origin = ResponseOrigin.Fetcher)
+                )
+            }
             return@intent
         }
 
-        // put the value to the cache only if a cache key is provided
-        if (key != null) {
+        // put the value to the cache only if a cache key is provided and the value is valid for caching
+        if (key != null && arguments?.isCaching(value) == true) {
             try {
                 cacheService?.set(key, value as Any)
             } catch (e: Exception) {
@@ -111,5 +117,17 @@ open class FetcherViewModel<T>(
 
         // state of response with data from the fetcher
         reduce { Response.Data(info.copy(origin = ResponseOrigin.Fetcher), value) }
+    }
+
+    suspend fun cleanCache(arguments: FetcherArguments<T>?) {
+        getCacheKey(arguments)?.let { cleanCache(it) }
+    }
+
+    suspend fun cleanCache(key: Any) {
+        try {
+            cacheService?.evict(key)
+        } catch (e: Exception) {
+            Timber.e(e, "Error on cache clearing with key=$key")
+        }
     }
 }

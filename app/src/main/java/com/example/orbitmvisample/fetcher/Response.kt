@@ -1,7 +1,9 @@
 package com.example.orbitmvisample.fetcher
 
+import com.example.orbitmvisample.apierrorhandler.ApiException
+
 /**
- * Holder for responses from [FetcherViewModel].
+ * Holder for responses from [FetcherViewModel]
  */
 sealed class Response<out T> {
 
@@ -27,7 +29,7 @@ sealed class Response<out T> {
 
     /**
      * No new data event dispatched by [FetcherViewModel] to signal the [FetcherService] returned no data (i.e the
-     * returned [kotlinx.coroutines.Flow], when collected, was empty).
+     * returned [kotlinx.coroutines.flow.Flow], when collected, was empty).
      */
     data class NoNewData(
         override val info: ResponseInfo = ResponseInfo(),
@@ -38,7 +40,7 @@ sealed class Response<out T> {
      */
     sealed class Error : Response<Nothing>() {
         data class Exception(
-            val error: Throwable,
+            val error: ApiException,
             override val info: ResponseInfo,
         ) : Error()
 
@@ -126,5 +128,10 @@ data class ResponseInfo(
      */
     val origin: ResponseOrigin = ResponseOrigin.Undefined,
     val responseId: Long = 0,
-    val arguments: FetcherArguments? = null
-)
+    val arguments: FetcherArguments<*>? = null
+) {
+    @Suppress("UNCHECKED_CAST")
+    fun <T> getArguments(): T? {
+        return arguments as? T
+    }
+}

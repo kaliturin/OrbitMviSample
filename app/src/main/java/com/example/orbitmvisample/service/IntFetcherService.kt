@@ -10,7 +10,7 @@ import timber.log.Timber
 import kotlin.random.Random
 
 class IntFetcherService : FetcherService<Int> {
-    override suspend fun request(arguments: FetcherArguments?): Int {
+    override suspend fun request(arguments: FetcherArguments<Int>?): Int {
         val args = arguments as? Arguments ?: Arguments()
         Timber.d("request data called in thread: " + Thread.currentThread().toString())
         return coroutineScope {
@@ -23,7 +23,7 @@ class IntFetcherService : FetcherService<Int> {
         }
     }
 
-    data class Arguments(val param: Int = 10) : FetcherArguments {
+    data class Arguments(val param: Int = 10) : FetcherArguments<Int> {
         override fun getCacheKey(): Any = param
     }
 }

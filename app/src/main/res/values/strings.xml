@@ -1,3 +1,11 @@
 <resources>
     <string name="app_name">OrbitMviSample</string>
+    <string name="error_response_format">error_response_format</string>
+    <string name="error_service_unavailable">error_service_unavailable</string>
+    <string name="error_gateway_timeout">error_gateway_timeout</string>
+    <string name="error_request_time_limit">error_request_time_limit</string>
+    <string name="error_connection_lost">error_connection_lost</string>
+    <string name="error_server_msg_parsing">error_server_msg_parsing</string>
+    <string name="error_connection_error">error_connection_error</string>
+    <string name="error_happened">error_happened</string>
 </resources>
