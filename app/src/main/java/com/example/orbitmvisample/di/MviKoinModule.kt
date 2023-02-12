@@ -1,6 +1,11 @@
 package com.example.orbitmvisample.di
 
 import android.app.Application
+import com.example.orbitmvisample.apierrorhandler.ApiErrorHandler
+import com.example.orbitmvisample.apierrorhandler.ApiExceptionBuilder
+import com.example.orbitmvisample.apierrorhandler.impl.ApiErrorHandlerImpl
+import com.example.orbitmvisample.apierrorhandler.impl.ApiErrorPropagator
+import com.example.orbitmvisample.apierrorhandler.impl.ApiExceptionBuilderImpl
 import com.example.orbitmvisample.fetcher.CacheServiceBuilder
 import com.example.orbitmvisample.fetcher.CacheSettings
 import com.example.orbitmvisample.service.IntCatchingFetcherService
@@ -27,23 +32,38 @@ object MviKoinModule {
 
     private fun module() = module {
 
-        single(named(SHORT_TERM_CACHE_SETTINGS)) {
-            CacheSettings(timeToExpire = 10, capacity = 10)
-        }
-
         single(named(SHORT_TERM_CACHE)) {
-            CacheServiceBuilder(get(named(SHORT_TERM_CACHE_SETTINGS))).build()
+            val settings = CacheSettings(timeToExpire = 10, capacity = 100)
+            CacheServiceBuilder(settings).build()
         }
 
         single { IntFetcherService() }
 
         single { IntCatchingFetcherService(get(), get(named(SHORT_TERM_CACHE))) }
 
-        viewModel { IntViewModel(get(), get(named(SHORT_TERM_CACHE))) }
+        single<ApiExceptionBuilder> { ApiExceptionBuilderImpl(androidContext().resources) }
 
-        viewModel { IntViewModel2(get()) }
+        single<ApiErrorHandler>(named<ApiErrorPropagator>()) { ApiErrorPropagator() }
+
+        single<ApiErrorHandler>(named<ApiErrorHandlerImpl>()) {
+            ApiErrorHandlerImpl(get(), get(named<ApiErrorPropagator>()))
+        }
+
+        viewModel {
+            IntViewModel(
+                get(),
+                get(named<ApiErrorHandlerImpl>()),
+                get(named(SHORT_TERM_CACHE))
+            )
+        }
+
+        viewModel {
+            IntViewModel2(
+                get(),
+                get(named<ApiErrorHandlerImpl>())
+            )
+        }
     }
 
-    private const val SHORT_TERM_CACHE_SETTINGS = "ShortTermCacheSettings"
-    private const val SHORT_TERM_CACHE = "ShortTermCache"
+    private const val SHORT_TERM_CACHE = "SHORT_TERM_CACHE"
 }
