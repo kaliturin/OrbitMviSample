@@ -3,6 +3,7 @@ package com.example.orbitmvisample.fetcher
 import androidx.lifecycle.ViewModel
 import com.appmattus.layercache.Cache
 import com.example.orbitmvisample.apierrorhandler.ApiErrorHandler
+import com.example.orbitmvisample.apierrorhandler.ApiException
 import com.example.orbitmvisample.cache.CacheKeyBuilder
 import kotlinx.coroutines.*
 import org.orbitmvi.orbit.ContainerHost
@@ -16,7 +17,7 @@ import timber.log.Timber
  */
 open class FetcherViewModel<T : Any>(
     private val fetcherService: FetcherService<T>,
-    private val errorHandler: ApiErrorHandler,
+    private val errorHandler: ApiErrorHandler? = null,
     private val cacheService: Cache<Any, Any>? = null
 ) : ViewModel(), ContainerHost<Response<T>, Nothing> {
 
@@ -89,7 +90,7 @@ open class FetcherViewModel<T : Any>(
         } catch (e: Exception) {
             Timber.e(e, "Error on requesting to fetcher with args=$arguments")
             // convert the exception to ApiException and handle it by default
-            val apiException = errorHandler.handle(e)
+            val apiException = errorHandler?.handle(e) ?: ApiException(cause = e)
             // then state of response with the error on data fetching
             reduce {
                 Response.Error.Exception(
