@@ -20,7 +20,6 @@ import org.koin.android.ext.koin.androidLogger
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.core.context.startKoin
 import org.koin.core.logger.Level
-import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
 object MviKoinModule {
@@ -38,43 +37,18 @@ object MviKoinModule {
         single<CacheBuilder> { CacheBuilderImpl() }
 
         // Cache manager
-        single {
-            CacheManager(get()).addSettings(*defaultListOfCacheSettings.toTypedArray())
-        }
+        single { CacheManager(get()).addSettings(*defaultListOfCacheSettings.toTypedArray()) }
 
         // Error handler
         single<ApiExceptionBuilder> { ApiExceptionBuilderImpl(androidContext().resources) }
-
-        single<ApiErrorHandler>(named<ApiErrorPropagator>()) { ApiErrorPropagator() }
-
-        single<ApiErrorHandler>(named<ApiErrorHandlerImpl>()) {
-            ApiErrorHandlerImpl(get(), get(named<ApiErrorPropagator>()))
-        }
+        single<ApiErrorHandler> { ApiErrorHandlerImpl(get(), ApiErrorPropagator()) }
 
         // Services impl
         single { IntFetcherService() }
-
-        single {
-            IntCatchingFetcherService(
-                get(),
-                get<CacheManager>().getCache(CACHE_10_SEC)
-            )
-        }
+        single { IntCatchingFetcherService(get(), get<CacheManager>().getCache(CACHE_10_SEC)) }
 
         // ViewModels impl
-        viewModel {
-            IntViewModel(
-                get(),
-                get(named<ApiErrorHandlerImpl>()),
-                get<CacheManager>().getCache(CACHE_10_SEC)
-            )
-        }
-
-        viewModel {
-            IntViewModel2(
-                get(),
-                get(named<ApiErrorHandlerImpl>())
-            )
-        }
+        viewModel { IntViewModel(get(), get(), get<CacheManager>().getCache(CACHE_10_SEC)) }
+        viewModel { IntViewModel2(get(), get()) }
     }
 }

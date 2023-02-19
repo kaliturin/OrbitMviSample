@@ -4,6 +4,9 @@ import com.example.orbitmvisample.apierrorhandler.ApiErrorCode
 import com.example.orbitmvisample.apierrorhandler.ApiErrorHandler
 import com.example.orbitmvisample.apierrorhandler.ApiException
 
+/**
+ * Propagates specific types of handling exceptions
+ */
 class ApiErrorPropagator : ApiErrorHandler {
     override suspend fun handle(throwable: Throwable): ApiException {
         val exception = throwable as? ApiException
