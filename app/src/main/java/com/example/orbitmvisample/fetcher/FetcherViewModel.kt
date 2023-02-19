@@ -3,6 +3,7 @@ package com.example.orbitmvisample.fetcher
 import androidx.lifecycle.ViewModel
 import com.appmattus.layercache.Cache
 import com.example.orbitmvisample.apierrorhandler.ApiErrorHandler
+import com.example.orbitmvisample.cache.CacheKeyBuilder
 import kotlinx.coroutines.*
 import org.orbitmvi.orbit.ContainerHost
 import org.orbitmvi.orbit.syntax.simple.intent
@@ -13,7 +14,7 @@ import timber.log.Timber
 /**
  * Simple template VM with data fetching service and optional cache service
  */
-open class FetcherViewModel<T>(
+open class FetcherViewModel<T : Any>(
     private val fetcherService: FetcherService<T>,
     private val errorHandler: ApiErrorHandler,
     private val cacheService: Cache<Any, Any>? = null
@@ -21,6 +22,8 @@ open class FetcherViewModel<T>(
 
     override val container =
         container<Response<T>, Nothing>(Response.NoNewData())
+
+    private val cacheKeyBuilder by lazy { CacheKeyBuilder(fetcherService) }
 
     /**
      * If false and in case of using data class of [FetcherArguments] implementation, then the VM
@@ -32,16 +35,6 @@ open class FetcherViewModel<T>(
 
     private fun nextResponseId(): Long {
         return if (withResponseId) ++requestCounter else 0
-    }
-
-    /**
-     * Makes sure that a cache key is unique by adding [FetcherService] name.
-     * This could be needed in case of sharing a cache service between several services.
-     */
-    open fun getCacheKey(arguments: FetcherArguments<T>?): Any? {
-        return arguments?.getCacheKey()?.let {
-            listOf(fetcherService.name(), it)
-        }
     }
 
     /**
@@ -59,7 +52,7 @@ open class FetcherViewModel<T>(
         val info = ResponseInfo(responseId = nextResponseId(), arguments = arguments)
 
         // build cache key only if cache service is provided
-        val key = cacheService?.let { getCacheKey(arguments) }
+        val key = cacheService?.let { cacheKeyBuilder.getCacheKey(arguments) }
 
         if (key != null) {
             // clear cache if required
@@ -109,7 +102,7 @@ open class FetcherViewModel<T>(
         // put the value to the cache only if a cache key is provided and the value is valid for caching
         if (key != null && arguments?.isCaching(value) == true) {
             try {
-                cacheService?.set(key, value as Any)
+                cacheService?.set(key, value)
             } catch (e: Exception) {
                 Timber.e(e, "Error on cache value setting with key=$key")
             }
@@ -120,7 +113,7 @@ open class FetcherViewModel<T>(
     }
 
     suspend fun cleanCache(arguments: FetcherArguments<T>?) {
-        getCacheKey(arguments)?.let { cleanCache(it) }
+        cacheKeyBuilder.getCacheKey(arguments)?.let { cleanCache(it) }
     }
 
     suspend fun cleanCache(key: Any) {

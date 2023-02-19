@@ -6,8 +6,11 @@ import com.example.orbitmvisample.apierrorhandler.ApiExceptionBuilder
 import com.example.orbitmvisample.apierrorhandler.impl.ApiErrorHandlerImpl
 import com.example.orbitmvisample.apierrorhandler.impl.ApiErrorPropagator
 import com.example.orbitmvisample.apierrorhandler.impl.ApiExceptionBuilderImpl
-import com.example.orbitmvisample.fetcher.CacheServiceBuilder
-import com.example.orbitmvisample.fetcher.CacheSettings
+import com.example.orbitmvisample.cache.CacheBuilder
+import com.example.orbitmvisample.cache.CacheManager
+import com.example.orbitmvisample.cache.impl.CACHE_10_SEC
+import com.example.orbitmvisample.cache.impl.CacheBuilderImpl
+import com.example.orbitmvisample.cache.impl.defaultListOfCacheSettings
 import com.example.orbitmvisample.service.IntCatchingFetcherService
 import com.example.orbitmvisample.service.IntFetcherService
 import com.example.orbitmvisample.vm.IntViewModel
@@ -31,16 +34,15 @@ object MviKoinModule {
     }
 
     private fun module() = module {
+        // Cache builder
+        single<CacheBuilder> { CacheBuilderImpl() }
 
-        single(named(SHORT_TERM_CACHE)) {
-            val settings = CacheSettings(timeToExpire = 10, capacity = 100)
-            CacheServiceBuilder(settings).build()
+        // Cache manager
+        single {
+            CacheManager(get()).addSettings(*defaultListOfCacheSettings.toTypedArray())
         }
 
-        single { IntFetcherService() }
-
-        single { IntCatchingFetcherService(get(), get(named(SHORT_TERM_CACHE))) }
-
+        // Error handler
         single<ApiExceptionBuilder> { ApiExceptionBuilderImpl(androidContext().resources) }
 
         single<ApiErrorHandler>(named<ApiErrorPropagator>()) { ApiErrorPropagator() }
@@ -49,11 +51,22 @@ object MviKoinModule {
             ApiErrorHandlerImpl(get(), get(named<ApiErrorPropagator>()))
         }
 
+        // Services impl
+        single { IntFetcherService() }
+
+        single {
+            IntCatchingFetcherService(
+                get(),
+                get<CacheManager>().getCache(CACHE_10_SEC)
+            )
+        }
+
+        // ViewModels impl
         viewModel {
             IntViewModel(
                 get(),
                 get(named<ApiErrorHandlerImpl>()),
-                get(named(SHORT_TERM_CACHE))
+                get<CacheManager>().getCache(CACHE_10_SEC)
             )
         }
 
@@ -64,6 +77,4 @@ object MviKoinModule {
             )
         }
     }
-
-    private const val SHORT_TERM_CACHE = "SHORT_TERM_CACHE"
 }

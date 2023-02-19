@@ -33,7 +33,7 @@ class MainFragment : Fragment(R.layout.fragment_main) {
             }
             is Response.Data -> {
                 if (response.info.origin == ResponseOrigin.Fetcher) {
-                    Timber.d("Loading stopped")
+                    Timber.d("Loading finished")
                 } else if (response.info.origin == ResponseOrigin.Cache) {
                     Timber.d("From cache")
                 }
@@ -41,7 +41,7 @@ class MainFragment : Fragment(R.layout.fragment_main) {
             }
             is Response.Error -> {
                 if (response.info.origin == ResponseOrigin.Fetcher) {
-                    Timber.d("Loading stopped")
+                    Timber.d("Loading finished")
                 }
                 Timber.e("Error on loading")
             }

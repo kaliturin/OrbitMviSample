@@ -1,13 +1,15 @@
-package com.example.orbitmvisample.fetcher
+package com.example.orbitmvisample.cache.impl
 
 import com.appmattus.layercache.Cache
 import com.appmattus.layercache.fromCache2k
+import com.example.orbitmvisample.cache.CacheBuilder
+import com.example.orbitmvisample.cache.CacheSettings
 import org.cache2k.Cache2kBuilder
 
-class CacheServiceBuilder(private val settings: CacheSettings) {
-    fun build(): Cache<Any, Any> {
+class CacheBuilderImpl : CacheBuilder {
+    override fun build(settings: CacheSettings): Cache<Any, Any> {
         val builder = Cache2kBuilder.forUnknownTypes()
-            .name(settings.name)
+            .name(settings.cacheName)
             .keepDataAfterExpired(settings.keepDataAfterExpired)
         if (settings.eternal || settings.timeToExpire == null) {
             builder.eternal(true)
