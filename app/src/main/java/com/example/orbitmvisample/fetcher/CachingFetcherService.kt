@@ -1,28 +1,21 @@
 package com.example.orbitmvisample.fetcher
 
 import com.appmattus.layercache.Cache
+import com.example.orbitmvisample.cache.CacheKeyBuilder
 import timber.log.Timber
 
-open class CachingFetcherService<T>(
+open class CachingFetcherService<T : Any>(
     private val fetcherService: FetcherService<T>,
     private val cacheService: Cache<Any, Any>
 ) : FetcherService<T> {
 
     override fun name(): String? = fetcherService.name()
 
-    /**
-     * Makes sure that a cache key is unique by adding [FetcherService] name.
-     * This could be needed in case of sharing a cache service between several services.
-     */
-    open fun getCacheKey(arguments: FetcherArguments<T>?): Any? {
-        return arguments?.getCacheKey()?.let {
-            listOf(name(), it)
-        }
-    }
+    private val cacheKeyBuilder = CacheKeyBuilder(fetcherService)
 
     @Suppress("UNCHECKED_CAST")
     override suspend fun request(arguments: FetcherArguments<T>?): T {
-        val key = getCacheKey(arguments)
+        val key = cacheKeyBuilder.getCacheKey(arguments)
 
         // get a value from the cache
         if (key != null) {
@@ -40,7 +33,7 @@ open class CachingFetcherService<T>(
         // put the value to the cache only if a cache key is provided
         if (key != null) {
             try {
-                cacheService.set(key, value as Any)
+                cacheService.set(key, value)
             } catch (e: Exception) {
                 Timber.e(e, "Error on cache value setting with key=$key")
             }
@@ -55,7 +48,7 @@ open class CachingFetcherService<T>(
     }
 
     suspend fun cleanCache(arguments: FetcherArguments<T>?) {
-        getCacheKey(arguments)?.let { cleanCache(it) }
+        cacheKeyBuilder.getCacheKey(arguments)?.let { cleanCache(it) }
     }
 
     suspend fun cleanCache(key: Any) {

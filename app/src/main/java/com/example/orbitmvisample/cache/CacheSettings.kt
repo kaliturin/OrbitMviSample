@@ -1,4 +1,4 @@
-package com.example.orbitmvisample.fetcher
+package com.example.orbitmvisample.cache
 
 import java.util.concurrent.TimeUnit
 
@@ -6,7 +6,7 @@ import java.util.concurrent.TimeUnit
  * Timed cache settings
  */
 class CacheSettings(
-    val name: String = "",
+    val cacheName: String = "",
     val capacity: Long? = null,
     val timeToExpire: Long? = null,
     val timeUnit: TimeUnit = TimeUnit.SECONDS,
