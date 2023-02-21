@@ -6,7 +6,7 @@ import com.example.orbitmvisample.cache.CacheBuilder
 import com.example.orbitmvisample.cache.CacheSettings
 import org.cache2k.Cache2kBuilder
 
-class CacheBuilderImpl : CacheBuilder {
+class Cache2KBuilder : CacheBuilder<Any, Any> {
     override fun build(settings: CacheSettings): Cache<Any, Any> {
         val builder = Cache2kBuilder.forUnknownTypes()
             .name(settings.cacheName)

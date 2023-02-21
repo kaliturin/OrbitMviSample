@@ -3,7 +3,7 @@ package com.example.orbitmvisample.cache
 import com.appmattus.layercache.Cache
 import java.util.concurrent.ConcurrentHashMap
 
-class CacheManager(private val builder: CacheBuilder) {
+class CacheManager(private val builder: CacheBuilder<Any, Any>) {
     private val cachesMap = ConcurrentHashMap<String, Cache<Any, Any>>()
     private val settingsMap = ConcurrentHashMap<String, CacheSettings>()
     private val defSettings =

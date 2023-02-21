@@ -1,9 +1,9 @@
 plugins {
     id 'com.android.application'
-    id 'org.jetbrains.kotlin.android'
+    id 'kotlin-android'
     id 'androidx.navigation.safeargs.kotlin'
+    id 'org.jetbrains.kotlin.plugin.serialization'
     id 'kotlin-parcelize'
-    id 'kotlin-kapt'
 }
 
 android {
@@ -79,4 +79,7 @@ dependencies {
     implementation "io.insert-koin:koin-android:$koin_version"
     implementation "com.fasterxml.jackson.module:jackson-module-kotlin:2.13.4"
     implementation "com.squareup.retrofit2:retrofit:2.9.0"
+
+    implementation "androidx.datastore:datastore-preferences:1.0.0"
+    implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1'
 }
