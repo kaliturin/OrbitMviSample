@@ -9,7 +9,7 @@ import com.example.orbitmvisample.apierrorhandler.impl.ApiExceptionBuilderImpl
 import com.example.orbitmvisample.cache.CacheBuilder
 import com.example.orbitmvisample.cache.CacheManager
 import com.example.orbitmvisample.cache.impl.CACHE_10_SEC
-import com.example.orbitmvisample.cache.impl.CacheBuilderImpl
+import com.example.orbitmvisample.cache.impl.Cache2KBuilder
 import com.example.orbitmvisample.cache.impl.defaultListOfCacheSettings
 import com.example.orbitmvisample.service.IntCatchingFetcherService
 import com.example.orbitmvisample.service.IntFetcherService
@@ -34,7 +34,7 @@ object MviKoinModule {
 
     private fun module() = module {
         // Cache builder
-        single<CacheBuilder> { CacheBuilderImpl() }
+        single<CacheBuilder<Any, Any>> { Cache2KBuilder() }
 
         // Cache manager
         single { CacheManager(get()).addSettings(*defaultListOfCacheSettings.toTypedArray()) }

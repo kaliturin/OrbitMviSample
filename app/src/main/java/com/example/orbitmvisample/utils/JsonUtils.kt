@@ -1,6 +1,5 @@
 package com.example.orbitmvisample.utils
 
-import android.text.TextUtils
 import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.MapperFeature
@@ -8,7 +7,6 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.json.JsonMapper
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import timber.log.Timber
-import java.io.IOException
 import kotlin.reflect.KClass
 
 object JsonUtils {
@@ -20,21 +18,51 @@ object JsonUtils {
         .build()
         .registerKotlinModule()
 
-    fun <T : Any> fromJson(json: String?, clazz: KClass<T>): T? {
-        return fromJson(json, clazz.java)
+    fun <T : Any> fromJson(json: String?, clazz: KClass<T>): T? = fromJson(json, clazz.java)
+
+    fun <T : Any> fromJsonSafe(json: String?, clazz: KClass<T>): T? = fromJsonSafe(json, clazz.java)
+
+    /**
+     * Serializes the passed json string to an object of the passed Class
+     */
+    fun <T> fromJson(json: String?, clazz: Class<T>): T? {
+        return if (!json.isNullOrEmpty()) {
+            mapper.readerFor(clazz).readValue(json)
+        } else null
     }
 
     /**
-     * Converts the passed json string to a object of the passed Class
+     * Serializes the passed json string to an object of the passed Class.
+     * Suppresses all the exceptions on failure.
      */
-    fun <T> fromJson(json: String?, clazz: Class<T>): T? {
-        return if (!TextUtils.isEmpty(json)) {
-            try {
-                mapper.readerFor(clazz).readValue(json)
-            } catch (e: IOException) {
-                Timber.e(e)
-                throw RuntimeException(e)
-            }
+    fun <T> fromJsonSafe(json: String?, clazz: Class<T>): T? {
+        return try {
+            fromJson(json, clazz)
+        } catch (e: Exception) {
+            Timber.e(e)
+            null
+        }
+    }
+
+    /**
+     * Serializes the passed object to a json string
+     */
+    fun toJson(obj: Any?): String? {
+        return if (obj != null) {
+            mapper.writer().withDefaultPrettyPrinter().writeValueAsString(obj)
         } else null
+    }
+
+    /**
+     * Serializes the passed object to a json string
+     * Suppresses all the exceptions on failure.
+     */
+    fun toJsonSafe(obj: Any?): String? {
+        return try {
+            toJson(obj)
+        } catch (e: Exception) {
+            Timber.e(e)
+            null
+        }
     }
 }
