@@ -11,7 +11,7 @@ open class CachingFetcherService<T : Any>(
 
     override fun name(): String? = fetcherService.name()
 
-    private val cacheKeyBuilder = CacheKeyBuilder(fetcherService)
+    private val cacheKeyBuilder = CacheKeyBuilder(fetcherService.name())
 
     @Suppress("UNCHECKED_CAST")
     override suspend fun request(arguments: FetcherArguments<T>?): T {

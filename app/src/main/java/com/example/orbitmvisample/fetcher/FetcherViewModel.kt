@@ -24,7 +24,7 @@ open class FetcherViewModel<T : Any>(
     override val container =
         container<Response<T>, Nothing>(Response.NoNewData())
 
-    private val cacheKeyBuilder by lazy { CacheKeyBuilder(fetcherService) }
+    private val cacheKeyBuilder by lazy { CacheKeyBuilder(fetcherService.name()) }
 
     /**
      * If false and in case of using data class of [FetcherArguments] implementation, then the VM
