@@ -6,10 +6,10 @@ import com.example.orbitmvisample.apierrorhandler.ApiExceptionBuilder
 import com.example.orbitmvisample.apierrorhandler.impl.ApiErrorHandlerImpl
 import com.example.orbitmvisample.apierrorhandler.impl.ApiErrorPropagator
 import com.example.orbitmvisample.apierrorhandler.impl.ApiExceptionBuilderImpl
-import com.example.orbitmvisample.cache.CacheBuilder
 import com.example.orbitmvisample.cache.CacheManager
 import com.example.orbitmvisample.cache.impl.CACHE_10_SEC
 import com.example.orbitmvisample.cache.impl.Cache2KBuilder
+import com.example.orbitmvisample.cache.impl.PreferencesCacheManager
 import com.example.orbitmvisample.cache.impl.defaultListOfCacheSettings
 import com.example.orbitmvisample.service.IntCatchingFetcherService
 import com.example.orbitmvisample.service.IntFetcherService
@@ -33,11 +33,14 @@ object MviKoinModule {
     }
 
     private fun module() = module {
-        // Cache builder
-        single<CacheBuilder<Any, Any>> { Cache2KBuilder() }
 
-        // Cache manager
-        single { CacheManager(get()).addSettings(*defaultListOfCacheSettings.toTypedArray()) }
+        // In memory cache manager
+        single {
+            CacheManager(Cache2KBuilder(), *defaultListOfCacheSettings.toTypedArray())
+        }
+
+        // Persistent cache manager
+        single { PreferencesCacheManager(androidContext()) }
 
         // Error handler
         single<ApiExceptionBuilder> { ApiExceptionBuilderImpl(androidContext().resources) }
@@ -45,10 +48,14 @@ object MviKoinModule {
 
         // Services impl
         single { IntFetcherService() }
-        single { IntCatchingFetcherService(get(), get<CacheManager>().getCache(CACHE_10_SEC)) }
+        single {
+            IntCatchingFetcherService(get(), get<CacheManager>().get(CACHE_10_SEC))
+        }
 
         // ViewModels impl
-        viewModel { IntViewModel(get(), get(), get<CacheManager>().getCache(CACHE_10_SEC)) }
+        viewModel {
+            IntViewModel(get(), get(), get<CacheManager>().get(CACHE_10_SEC))
+        }
         viewModel { IntViewModel2(get(), get()) }
     }
 }

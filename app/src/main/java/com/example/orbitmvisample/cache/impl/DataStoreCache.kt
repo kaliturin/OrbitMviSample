@@ -32,6 +32,9 @@ fun DataStore<Preferences>.asFloatCache(): Cache<String, Float> =
 fun DataStore<Preferences>.asDoubleCache(): Cache<String, Double> =
     DataStoreCache(this) { doublePreferencesKey(it) }
 
+/**
+ * [androidx.datastore.core.DataStore]<Preferences> wrapped with [com.appmattus.layercache.Cache]<String, T>
+ */
 private class DataStoreCache<T : Any>(
     private val store: DataStore<Preferences>,
     private val getKey: (String) -> Preferences.Key<T>

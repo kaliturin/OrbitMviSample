@@ -6,7 +6,7 @@ import java.util.concurrent.TimeUnit
  * Timed cache settings
  */
 class CacheSettings(
-    val cacheName: String = "",
+    val cacheName: String = "default",
     val capacity: Long? = null,
     val timeToExpire: Long? = null,
     val timeUnit: TimeUnit = TimeUnit.SECONDS,
