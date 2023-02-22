@@ -6,7 +6,7 @@ import timber.log.Timber
 
 open class CachingFetcherService<T : Any>(
     private val fetcherService: FetcherService<T>,
-    private val cacheService: Cache<Any, Any>
+    private val cacheService: Cache<Any, Any>?
 ) : FetcherService<T> {
 
     override fun name(): String? = fetcherService.name()
@@ -20,7 +20,7 @@ open class CachingFetcherService<T : Any>(
         // get a value from the cache
         if (key != null) {
             val value = try {
-                cacheService.get(key)
+                cacheService?.get(key)
             } catch (e: Exception) {
                 Timber.e(e, "Error on cache value getting with key=$key")
             }
@@ -33,7 +33,7 @@ open class CachingFetcherService<T : Any>(
         // put the value to the cache only if a cache key is provided
         if (key != null) {
             try {
-                cacheService.set(key, value)
+                cacheService?.set(key, value)
             } catch (e: Exception) {
                 Timber.e(e, "Error on cache value setting with key=$key")
             }
@@ -53,7 +53,7 @@ open class CachingFetcherService<T : Any>(
 
     suspend fun cleanCache(key: Any) {
         try {
-            cacheService.evict(key)
+            cacheService?.evict(key)
         } catch (e: Exception) {
             Timber.e(e, "Error on cache clearing with key=$key")
         }

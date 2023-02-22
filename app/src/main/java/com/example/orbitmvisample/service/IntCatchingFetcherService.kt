@@ -6,5 +6,5 @@ import com.example.orbitmvisample.fetcher.FetcherService
 
 class IntCatchingFetcherService(
     fetcherService: FetcherService<Int>,
-    cacheService: Cache<Any, Any>
+    cacheService: Cache<Any, Any>?
 ) : CachingFetcherService<Int>(fetcherService, cacheService)

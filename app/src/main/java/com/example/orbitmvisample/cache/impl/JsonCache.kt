@@ -6,6 +6,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlin.reflect.KClass
 
+/**
+ * Json wrapper for cache [com.appmattus.layercache.Cache]<String, String>.
+ * Allows to store in the cache arbitrary json-serializing object.
+ */
 class JsonCache<T : Any>(
     private val clazz: KClass<T>,
     private val cache: Cache<String, String>
