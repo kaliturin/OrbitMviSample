@@ -7,6 +7,8 @@ import com.example.orbitmvisample.apierrorhandler.impl.ApiErrorHandlerImpl
 import com.example.orbitmvisample.apierrorhandler.impl.ApiErrorPropagator
 import com.example.orbitmvisample.apierrorhandler.impl.ApiExceptionBuilderImpl
 import com.example.orbitmvisample.cache.CacheManager
+import com.example.orbitmvisample.cache.crypto.CryptoManager
+import com.example.orbitmvisample.cache.crypto.CryptoManagerImpl
 import com.example.orbitmvisample.cache.impl.CACHE_10_SEC
 import com.example.orbitmvisample.cache.impl.Cache2KBuilder
 import com.example.orbitmvisample.cache.impl.PreferencesCacheManager
@@ -34,13 +36,15 @@ object MviKoinModule {
 
     private fun module() = module {
 
+        single<CryptoManager> { CryptoManagerImpl() }
+
+        // Persistent cache manager
+        single { PreferencesCacheManager(androidContext(), get()) }
+
         // In memory cache manager
         single {
             CacheManager(Cache2KBuilder(), *defaultListOfCacheSettings.toTypedArray())
         }
-
-        // Persistent cache manager
-        single { PreferencesCacheManager(androidContext()) }
 
         // Error handler
         single<ApiExceptionBuilder> { ApiExceptionBuilderImpl(androidContext().resources) }
