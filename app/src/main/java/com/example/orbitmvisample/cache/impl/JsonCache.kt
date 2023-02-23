@@ -24,16 +24,16 @@ class JsonCache<T : Any>(
     }
 
     override suspend fun get(key: String): T? {
-        val json = cache.get(key)
         return withContext(Dispatchers.Default) {
+            val json = cache.get(key)
             JsonUtils.fromJsonSafe(json, clazz)
         }
     }
 
     override suspend fun set(key: String, value: T) {
-        val json = withContext(Dispatchers.Default) {
-            JsonUtils.toJsonSafe(value) ?: ""
+        withContext(Dispatchers.Default) {
+            val json = JsonUtils.toJsonSafe(value) ?: ""
+            cache.set(key, json)
         }
-        cache.set(key, json)
     }
 }

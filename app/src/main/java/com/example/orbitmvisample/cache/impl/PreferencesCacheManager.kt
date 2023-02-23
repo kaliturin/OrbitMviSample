@@ -5,6 +5,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
 import com.appmattus.layercache.Cache
+import com.example.orbitmvisample.cache.crypto.CryptoManager
 import org.jetbrains.annotations.ApiStatus.Internal
 import timber.log.Timber
 import java.util.concurrent.ConcurrentHashMap
@@ -13,11 +14,14 @@ import java.util.concurrent.ConcurrentHashMap
  * This cache manager provides [com.appmattus.layercache.Cache]<String, V> cache
  * that stores values in [androidx.datastore.core.DataStore]<Preferences>
  */
-class PreferencesCacheManager(private val context: Context) {
+class PreferencesCacheManager(
+    private val context: Context,
+    val cryptoManager: CryptoManager
+) {
     private val dataStoreMap = ConcurrentHashMap<String, DataStore<Preferences>>()
 
     inline fun <reified V : Any> get(cacheName: String): Cache<String, V>? {
-        return getDataStore(cacheName)?.asJsonCache(V::class)
+        return getDataStore(cacheName)?.asCryptoJsonCache(cryptoManager, V::class)
     }
 
     suspend fun clean(cacheName: String) {
