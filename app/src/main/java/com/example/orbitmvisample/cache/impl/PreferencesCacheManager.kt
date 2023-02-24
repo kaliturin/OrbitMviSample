@@ -20,16 +20,16 @@ class PreferencesCacheManager(
 ) {
     private val dataStoreMap = ConcurrentHashMap<String, DataStore<Preferences>>()
 
-    inline fun <reified V : Any> get(cacheName: String): Cache<String, V>? {
+    inline fun <reified V : Any> get(cacheName: String = DEFAULT_CACHE_NAME): Cache<String, V>? {
         return getDataStore(cacheName)?.asCryptoJsonCache(cryptoManager, V::class)
     }
 
-    suspend fun clean(cacheName: String) {
+    suspend fun clean(cacheName: String = DEFAULT_CACHE_NAME) {
         getDataStore(cacheName)?.asStringCache()?.evictAll()
     }
 
     @Internal
-    fun getDataStore(cacheName: String): DataStore<Preferences>? {
+    fun getDataStore(cacheName: String = DEFAULT_CACHE_NAME): DataStore<Preferences>? {
         return try {
             dataStoreMap[cacheName] ?: run {
                 PreferencesDataStore(cacheName).get(context).also {
@@ -47,5 +47,9 @@ class PreferencesCacheManager(
         fun get(context: Context): DataStore<Preferences> {
             return context.dataStore
         }
+    }
+
+    companion object {
+        const val DEFAULT_CACHE_NAME = "default_cache_68e0fg547n60"
     }
 }
