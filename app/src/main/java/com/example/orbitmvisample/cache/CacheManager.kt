@@ -35,7 +35,7 @@ class CacheManager(
     }
 
     companion object {
-        const val DEFAULT_CACHE_NAME = "DEFAULT_CACHE_38e43d05t8y0"
+        const val DEFAULT_CACHE_NAME = "default_cache_38e43d05t8y0"
 
         private val defSettings = arrayOf(
             CacheSettings(
