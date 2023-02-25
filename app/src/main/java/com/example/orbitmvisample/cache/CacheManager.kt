@@ -1,6 +1,7 @@
 package com.example.orbitmvisample.cache
 
 import com.appmattus.layercache.Cache
+import timber.log.Timber
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -8,19 +9,31 @@ import java.util.concurrent.ConcurrentHashMap
  * that is built by passed cache builder and passed settings.
  */
 class CacheManager(
-    private val builder: CacheBuilder,
+    val builder: CacheBuilder,
     vararg settings: CacheSettings = defSettings
 ) {
-    private val cachesMap = ConcurrentHashMap<String, Cache<*, *>>()
-    private val settingsMap = ConcurrentHashMap<String, CacheSettings>()
+    @PublishedApi
+    internal val cachesMap = ConcurrentHashMap<String, Cache<*, *>>()
+
+    @PublishedApi
+    internal val settingsMap = ConcurrentHashMap<String, CacheSettings>()
 
     @Suppress("UNCHECKED_CAST")
-    fun <K : Any, V : Any> get(cacheName: String = DEFAULT_CACHE_NAME): Cache<K, V>? {
-        return (cachesMap[cacheName] ?: run {
-            val settings = settingsMap[cacheName] ?: defSettings.first()
-            builder.build<K, V>(settings)?.also { cachesMap[cacheName] = it }
-        }) as? Cache<K, V>
+    @PublishedApi
+    internal inline fun <K : Any, reified V : Any> getInternal(cacheName: String = DEFAULT_CACHE_NAME): Cache<K, V>? {
+        return try {
+            (cachesMap[cacheName] ?: run {
+                val settings = settingsMap[cacheName] ?: defSettings.first()
+                builder.build<K, V>(settings, V::class)?.also { cachesMap[cacheName] = it }
+            }) as? Cache<K, V>
+        } catch (e: Exception) {
+            Timber.e(e)
+            null
+        }
     }
+
+    inline fun <reified V : Any> get(cacheName: String = DEFAULT_CACHE_NAME): Cache<Any, V>? =
+        getInternal(cacheName)
 
     suspend fun clean(cacheName: String = DEFAULT_CACHE_NAME) {
         cachesMap[cacheName]?.evictAll()
@@ -37,7 +50,8 @@ class CacheManager(
     companion object {
         const val DEFAULT_CACHE_NAME = "default_cache_38e43d05t8y0"
 
-        private val defSettings = arrayOf(
+        @PublishedApi
+        internal val defSettings = arrayOf(
             CacheSettings(
                 cacheName = DEFAULT_CACHE_NAME,
                 capacity = 1000,

@@ -1,10 +1,9 @@
-package com.example.orbitmvisample.service
+package com.example.orbitmvisample.experimental
 
 import com.appmattus.layercache.Cache
-import com.example.orbitmvisample.fetcher.CachingFetcherService
 import com.example.orbitmvisample.fetcher.FetcherService
 
-class IntCatchingFetcherService(
+class IntCatchingService(
     fetcherService: FetcherService<Int>,
     cacheService: Cache<Any, Any>?
 ) : CachingFetcherService<Int>(fetcherService, cacheService)

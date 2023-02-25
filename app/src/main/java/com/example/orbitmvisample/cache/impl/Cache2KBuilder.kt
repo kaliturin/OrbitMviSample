@@ -5,12 +5,14 @@ import com.appmattus.layercache.fromCache2k
 import com.example.orbitmvisample.cache.CacheBuilder
 import com.example.orbitmvisample.cache.CacheSettings
 import org.cache2k.Cache2kBuilder
+import kotlin.reflect.KClass
 
 /**
  * Builds [com.appmattus.layercache.Cache] cache that is wrapping [org.cache2k.Cache] cache
  */
 class Cache2KBuilder : CacheBuilder {
-    override fun <K : Any, V : Any> build(settings: CacheSettings): Cache<K, V>? {
+
+    override fun <K : Any, V : Any> build(settings: CacheSettings, clazz: KClass<V>): Cache<K, V>? {
         val builder = Cache2kBuilder.forUnknownTypes()
             .name(settings.cacheName)
             .keepDataAfterExpired(settings.keepDataAfterExpired)
