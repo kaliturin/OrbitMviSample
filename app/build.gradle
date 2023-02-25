@@ -66,10 +66,12 @@ dependencies {
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
 
-    implementation "com.appmattus.layercache:layercache-serializer:$layercache_version"
-    implementation "com.appmattus.layercache:layercache-android-encryption:$layercache_version"
     implementation "com.appmattus.layercache:layercache:$layercache_version"
     implementation "com.appmattus.layercache:layercache-cache2k:$layercache_version"
+    implementation "com.appmattus.layercache:layercache-android:$layercache_version"
+    implementation "com.appmattus.layercache:layercache-serializer:$layercache_version"
+    implementation "com.appmattus.layercache:layercache-android-encryption:$layercache_version"
+
     implementation "org.cache2k:cache2k-core:2.2.1.Final"
     implementation "org.cache2k:cache2k-api:2.2.1.Final"
 

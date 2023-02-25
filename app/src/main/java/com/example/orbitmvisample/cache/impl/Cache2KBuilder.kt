@@ -11,18 +11,17 @@ import kotlin.reflect.KClass
  * Builds [com.appmattus.layercache.Cache] cache that is wrapping [org.cache2k.Cache] cache
  */
 class Cache2KBuilder : CacheBuilder {
-
     override fun <K : Any, V : Any> build(settings: CacheSettings, clazz: KClass<V>): Cache<K, V>? {
         val builder = Cache2kBuilder.forUnknownTypes()
             .name(settings.cacheName)
             .keepDataAfterExpired(settings.keepDataAfterExpired)
-        if (settings.eternal || settings.timeToExpire == null) {
+        if (settings.eternal || settings.timeToExpire <= 0L) {
             builder.eternal(true)
         } else {
             builder.expireAfterWrite(settings.timeToExpire, settings.timeUnit)
         }
-        if (settings.capacity != null) {
-            builder.entryCapacity(settings.capacity)
+        if (settings.capacity != 0) {
+            builder.entryCapacity(settings.capacity.toLong())
         }
         @Suppress("UNCHECKED_CAST")
         return (builder.build() as? org.cache2k.Cache<K, V>)?.let {

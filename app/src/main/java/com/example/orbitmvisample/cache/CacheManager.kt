@@ -6,10 +6,11 @@ import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Cache manager allows to obtain [com.appmattus.layercache.Cache]<K, V> cache,
- * that is built by passed cache builder and passed settings.
+ * that is built by passed cache builder with settings.
  */
 class CacheManager(
-    val builder: CacheBuilder,
+    val cacheBuilder: CacheBuilder? = null,
+    val cacheBuilderProvider: CacheBuilderProvider? = null,
     vararg settings: CacheSettings = defSettings
 ) {
     @PublishedApi
@@ -24,6 +25,8 @@ class CacheManager(
         return try {
             (cachesMap[cacheName] ?: run {
                 val settings = settingsMap[cacheName] ?: defSettings.first()
+                val builder = cacheBuilder ?: cacheBuilderProvider?.get(settings)
+                ?: throw IllegalArgumentException("No CacheBuilder is provided")
                 builder.build<K, V>(settings, V::class)?.also { cachesMap[cacheName] = it }
             }) as? Cache<K, V>
         } catch (e: Exception) {

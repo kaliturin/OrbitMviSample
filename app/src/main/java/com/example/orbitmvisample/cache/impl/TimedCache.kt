@@ -7,12 +7,20 @@ fun <K : Any, V : Any> Cache<String, String>.asTimedJsonCache(
     settings: CacheSettings
 ): Cache<K, V> = TimedCache(asJsonCache(), settings)
 
+fun <K : Any, V : Any> Cache<K, V>.asTimedCache(
+    settings: CacheSettings
+): Cache<K, V> {
+    val cache = valueTransform(
+        { TimedCache.TimedValue(settings.timeToExpireMills + currentTime(), it) },
+        { it.value }
+    )
+    return TimedCache(cache, settings)
+}
+
 private class TimedCache<K : Any, V : Any>(
-    private val cache: Cache<Any, TimedValue<V>>,
+    private val cache: Cache<K, TimedValue<V>>,
     private val settings: CacheSettings
 ) : Cache<K, V> {
-
-    private val timeToExpire = settings.timeUnit.toMillis(settings.timeToExpire ?: 0)
 
     override suspend fun evict(key: K) {
         cache.evict(key)
@@ -34,13 +42,13 @@ private class TimedCache<K : Any, V : Any>(
     }
 
     override suspend fun set(key: K, value: V) {
-        cache.set(key, TimedValue(timeToExpire + currentTime(), value))
+        cache.set(key, TimedValue(settings.timeToExpireMills + currentTime(), value))
     }
-
-    private fun currentTime(): Long = System.currentTimeMillis()
 
     data class TimedValue<V>(
         val time: Long,
         val value: V
     )
 }
+
+private fun currentTime(): Long = System.currentTimeMillis()

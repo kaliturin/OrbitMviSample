@@ -27,14 +27,13 @@ class PreferencesCacheBuilder(
             ?.asStringCache()
             ?.encrypt(context)
 
-        return settings.timeToExpire?.let {
+        return if (settings.timeToExpire != 0L)
             cache?.asTimedJsonCache(settings)
-        } ?: run {
+        else
             cache?.asJsonCache(clazz)
-        }
     }
 
-    private fun getDataStore(cacheName: String = DEFAULT_CACHE_NAME): DataStore<Preferences>? {
+    private fun getDataStore(cacheName: String): DataStore<Preferences>? {
         return try {
             dataStoreMap[cacheName] ?: run {
                 PreferencesDataStore(cacheName).get(context).also {
@@ -52,9 +51,5 @@ class PreferencesCacheBuilder(
         fun get(context: Context): DataStore<Preferences> {
             return context.dataStore
         }
-    }
-
-    companion object {
-        const val DEFAULT_CACHE_NAME = "default_cache_68e0fg547n60"
     }
 }
