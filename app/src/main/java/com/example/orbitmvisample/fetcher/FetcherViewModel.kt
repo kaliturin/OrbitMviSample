@@ -34,22 +34,24 @@ open class FetcherViewModel<T : Any>(
 
     private var requestCounter: Long = 0
 
-    private fun nextResponseId(): Long {
-        return if (withResponseId) ++requestCounter else 0
-    }
-
     /**
      * Sends request to VM to start for emitting [Response] states
      * @param arguments arguments of [FetcherService]
      * @param cleanCache if true - then removes a value from the cache before fetching it from [FetcherService]
+     * @param refreshCache if true - then after response from cache VM trying to fetch a value from [FetcherService]
      */
     fun request(
         arguments: FetcherArguments<T>? = null,
-        cleanCache: Boolean = false
+        cleanCache: Boolean = false,
+        refreshCache: Boolean = false,
+        withResponseId: Boolean = this.withResponseId
     ) = intent {
 
+        var refreshCacheStared = false
+
         // build response info
-        val info = ResponseInfo(responseId = nextResponseId(), arguments = arguments)
+        val responseId = if (withResponseId) ++requestCounter else 0
+        val info = ResponseInfo(responseId = responseId, arguments = arguments)
 
         // build a cache key
         val key = cacheKeyBuilder?.build(arguments)
@@ -69,15 +71,17 @@ open class FetcherViewModel<T : Any>(
                 value?.let {
                     // state of response with data from the cache
                     reduce { Response.Data(info.copy(origin = ResponseOrigin.Cache), it) }
-                    return@intent
+                    if (refreshCache) refreshCacheStared = true else return@intent
                 }
             }
         }
 
         val isAlreadyLoading = state is Response.Loading
 
-        // state of response about loading is started
-        reduce { Response.Loading(info.copy(origin = ResponseOrigin.Fetcher)) }
+        if (!refreshCacheStared) {
+            // state of response about loading is started
+            reduce { Response.Loading(info.copy(origin = ResponseOrigin.Fetcher)) }
+        }
 
         // if loading was already started - don't fetch again
         if (isAlreadyLoading) return@intent
