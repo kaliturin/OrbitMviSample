@@ -5,7 +5,9 @@ import com.appmattus.layercache.Cache
 import com.example.orbitmvisample.apierrorhandler.ApiErrorHandler
 import com.example.orbitmvisample.apierrorhandler.ApiException
 import com.example.orbitmvisample.cache.CacheKeyBuilder
-import kotlinx.coroutines.*
+import com.example.orbitmvisample.cache.CacheKeyBuilderAny
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.orbitmvi.orbit.ContainerHost
 import org.orbitmvi.orbit.syntax.simple.intent
 import org.orbitmvi.orbit.syntax.simple.reduce
@@ -13,18 +15,16 @@ import org.orbitmvi.orbit.viewmodel.container
 import timber.log.Timber
 
 /**
- * Simple template VM with data fetching service and optional cache service
+ * VM with data fetching service and optional cache service
  */
 open class FetcherViewModel<T : Any>(
     private val fetcherService: FetcherService<T>,
     private val errorHandler: ApiErrorHandler? = null,
-    private val cacheService: Cache<Any, Any>? = null
+    private val cacheService: Cache<Any, T>? = null,
+    private var cacheKeyBuilder: CacheKeyBuilder? = null
 ) : ViewModel(), ContainerHost<Response<T>, Nothing> {
 
-    override val container =
-        container<Response<T>, Nothing>(Response.NoNewData())
-
-    private val cacheKeyBuilder by lazy { CacheKeyBuilder(fetcherService.name()) }
+    override val container = container<Response<T>, Nothing>(Response.NoNewData())
 
     /**
      * If false and in case of using data class of [FetcherArguments] implementation, then the VM
@@ -43,7 +43,6 @@ open class FetcherViewModel<T : Any>(
      * @param arguments arguments of [FetcherService]
      * @param cleanCache if true - then removes a value from the cache before fetching it from [FetcherService]
      */
-    @Suppress("UNCHECKED_CAST")
     fun request(
         arguments: FetcherArguments<T>? = null,
         cleanCache: Boolean = false
@@ -52,8 +51,8 @@ open class FetcherViewModel<T : Any>(
         // build response info
         val info = ResponseInfo(responseId = nextResponseId(), arguments = arguments)
 
-        // build cache key only if cache service is provided
-        val key = cacheService?.let { cacheKeyBuilder.getCacheKey(arguments) }
+        // build a cache key
+        val key = cacheKeyBuilder?.build(arguments)
 
         if (key != null) {
             // clear cache if required
@@ -65,8 +64,9 @@ open class FetcherViewModel<T : Any>(
                     cacheService?.get(key)
                 } catch (e: Exception) {
                     Timber.e(e, "Error on cache value getting with key=$key")
+                    null
                 }
-                (value as? T)?.let {
+                value?.let {
                     // state of response with data from the cache
                     reduce { Response.Data(info.copy(origin = ResponseOrigin.Cache), it) }
                     return@intent
@@ -114,14 +114,23 @@ open class FetcherViewModel<T : Any>(
     }
 
     suspend fun cleanCache(arguments: FetcherArguments<T>?) {
-        cacheKeyBuilder.getCacheKey(arguments)?.let { cleanCache(it) }
+        cacheKeyBuilder?.build(arguments)?.let { cleanCache(it) }
     }
 
-    suspend fun cleanCache(key: Any) {
-        try {
-            cacheService?.evict(key)
-        } catch (e: Exception) {
-            Timber.e(e, "Error on cache clearing with key=$key")
+    private suspend fun cleanCache(key: Any) {
+        withContext(Dispatchers.Default) {
+            try {
+                cacheService?.evict(key)
+            } catch (e: Exception) {
+                Timber.e(e, "Error on cache clearing with key=$key")
+            }
+        }
+    }
+
+    init {
+        if (cacheService != null && cacheKeyBuilder == null) {
+            // build default cache key builder
+            cacheKeyBuilder = CacheKeyBuilderAny(fetcherService.name())
         }
     }
 }

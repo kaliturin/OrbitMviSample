@@ -3,19 +3,9 @@ package com.example.orbitmvisample.cache.impl
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.*
 import com.appmattus.layercache.Cache
-import com.example.orbitmvisample.cache.crypto.CryptoCache
-import com.example.orbitmvisample.cache.crypto.CryptoManager
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import timber.log.Timber
-import kotlin.reflect.KClass
-
-fun <T : Any> DataStore<Preferences>.asCryptoJsonCache(
-    cryptoManager: CryptoManager, clazz: KClass<T>
-): Cache<String, T> = JsonCache(clazz, CryptoCache(cryptoManager, asStringCache()))
-
-fun <T : Any> DataStore<Preferences>.asJsonCache(clazz: KClass<T>): Cache<String, T> =
-    JsonCache(clazz, asStringCache())
 
 fun DataStore<Preferences>.asStringCache(): Cache<String, String> =
     DataStoreCache(this) { stringPreferencesKey(it) }

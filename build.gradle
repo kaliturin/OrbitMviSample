@@ -3,6 +3,7 @@ buildscript {
 
     ext.kotlin_version = "1.7.20"
     ext.orbit_mvi_version = "4.5.0"
+    ext.layercache_version = "1.4.0"
     ext.koin_version = "3.3.2"
 
     repositories {

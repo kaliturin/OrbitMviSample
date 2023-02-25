@@ -5,31 +5,36 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
 import com.appmattus.layercache.Cache
-import com.example.orbitmvisample.cache.crypto.CryptoManager
-import org.jetbrains.annotations.ApiStatus.Internal
+import com.appmattus.layercache.encrypt
+import com.example.orbitmvisample.cache.CacheBuilder
+import com.example.orbitmvisample.cache.CacheSettings
 import timber.log.Timber
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.collections.set
+import kotlin.reflect.KClass
 
 /**
- * This cache manager provides [com.appmattus.layercache.Cache]<String, V> cache
- * that stores values in [androidx.datastore.core.DataStore]<Preferences>
+ * Builds [com.appmattus.layercache.Cache] cache that is wrapping
+ * [androidx.datastore.core.DataStore]<Preferences> cache
  */
-class PreferencesCacheManager(
-    private val context: Context,
-    val cryptoManager: CryptoManager
-) {
+class PreferencesCacheBuilder(
+    private val context: Context
+) : CacheBuilder {
     private val dataStoreMap = ConcurrentHashMap<String, DataStore<Preferences>>()
 
-    inline fun <reified V : Any> get(cacheName: String = DEFAULT_CACHE_NAME): Cache<String, V>? {
-        return getDataStore(cacheName)?.asCryptoJsonCache(cryptoManager, V::class)
+    override fun <K : Any, V : Any> build(settings: CacheSettings, clazz: KClass<V>): Cache<K, V>? {
+        val cache = getDataStore(settings.cacheName)
+            ?.asStringCache()
+            ?.encrypt(context)
+
+        return settings.timeToExpire?.let {
+            cache?.asTimedJsonCache(settings)
+        } ?: run {
+            cache?.asJsonCache(clazz)
+        }
     }
 
-    suspend fun clean(cacheName: String = DEFAULT_CACHE_NAME) {
-        getDataStore(cacheName)?.asStringCache()?.evictAll()
-    }
-
-    @Internal
-    fun getDataStore(cacheName: String = DEFAULT_CACHE_NAME): DataStore<Preferences>? {
+    private fun getDataStore(cacheName: String = DEFAULT_CACHE_NAME): DataStore<Preferences>? {
         return try {
             dataStoreMap[cacheName] ?: run {
                 PreferencesDataStore(cacheName).get(context).also {

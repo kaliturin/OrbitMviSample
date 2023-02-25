@@ -8,5 +8,5 @@ import com.example.orbitmvisample.service.IntFetcherService
 class IntViewModel(
     fetcherService: IntFetcherService,
     errorHandler: ApiErrorHandler,
-    cacheService: Cache<Any, Any>? = null
+    cacheService: Cache<Any, Int>
 ) : FetcherViewModel<Int>(fetcherService, errorHandler, cacheService)

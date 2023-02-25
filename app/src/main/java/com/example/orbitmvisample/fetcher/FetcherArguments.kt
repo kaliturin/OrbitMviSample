@@ -7,7 +7,7 @@ interface FetcherArguments<T> {
     /**
      * Returns a cache key
      */
-    fun getCacheKey(): Any? = null
+    fun getCacheKey(): Any? = this
 
     /**
      * Returns true if the passed value is valid for caching
