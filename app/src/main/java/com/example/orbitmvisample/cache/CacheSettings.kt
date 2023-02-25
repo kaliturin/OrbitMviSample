@@ -7,9 +7,18 @@ import java.util.concurrent.TimeUnit
  */
 class CacheSettings(
     val cacheName: String = "default",
-    val capacity: Long? = null,
-    val timeToExpire: Long? = null,
+    val capacity: Int = 0,
+    val timeToExpire: Long = 0,
     val timeUnit: TimeUnit = TimeUnit.SECONDS,
     val keepDataAfterExpired: Boolean = false,
-    val eternal: Boolean = false
-)
+    val eternal: Boolean = false,
+    val cacheType: CacheType = CacheType.LRU
+) {
+    val timeToExpireMills = timeUnit.toMillis(timeToExpire)
+}
+
+enum class CacheType {
+    LRU,
+    CACHE2K,
+    PREFERENCES
+}

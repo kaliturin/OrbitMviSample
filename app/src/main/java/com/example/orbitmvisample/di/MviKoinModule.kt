@@ -6,8 +6,11 @@ import com.example.orbitmvisample.apierrorhandler.ApiExceptionBuilder
 import com.example.orbitmvisample.apierrorhandler.impl.ApiErrorHandlerImpl
 import com.example.orbitmvisample.apierrorhandler.impl.ApiErrorPropagator
 import com.example.orbitmvisample.apierrorhandler.impl.ApiExceptionBuilderImpl
+import com.example.orbitmvisample.cache.CacheBuilderProvider
 import com.example.orbitmvisample.cache.CacheManager
-import com.example.orbitmvisample.cache.impl.*
+import com.example.orbitmvisample.cache.impl.CACHE_10_SEC
+import com.example.orbitmvisample.cache.impl.CACHE_30_SEC
+import com.example.orbitmvisample.cache.impl.defaultListOfCacheSettings
 import com.example.orbitmvisample.experimental.IntCatchingService
 import com.example.orbitmvisample.service.IntFetcherService
 import com.example.orbitmvisample.vm.IntViewModel
@@ -20,7 +23,7 @@ import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
 typealias MemoryCacheManager = CacheManager
-typealias PersistentCacheManager = CacheManager
+typealias PreferencesCacheManager = CacheManager
 
 object MviKoinModule {
 
@@ -34,26 +37,27 @@ object MviKoinModule {
 
     private fun module() = module {
 
-        single { Cache2KBuilder() }
-
-        single { PreferencesCacheBuilder(androidContext()) }
+        single { CacheBuilderProvider(androidContext()) }
 
         // In memory cache manager
         single {
-            MemoryCacheManager(get<Cache2KBuilder>(), *defaultListOfCacheSettings.toTypedArray())
+            MemoryCacheManager(
+                cacheBuilderProvider = get(),
+                settings = defaultListOfCacheSettings.toTypedArray()
+            )
         }
 
         // Persistent cache manager
         single {
-            PersistentCacheManager(
-                get<PreferencesCacheBuilder>(),
-                *defaultListOfCacheSettings.toTypedArray()
+            PreferencesCacheManager(
+                cacheBuilderProvider = get(),
+                settings = defaultListOfCacheSettings.toTypedArray()
             )
         }
 
         single(named("layerCache")) {
             val memoryCache = get<MemoryCacheManager>().get<Int>(CACHE_10_SEC)
-            val persistCache = get<PersistentCacheManager>().get<Int>(CACHE_30_SEC)
+            val persistCache = get<PreferencesCacheManager>().get<Int>(CACHE_30_SEC)
             memoryCache!! + persistCache!!
         }
 
