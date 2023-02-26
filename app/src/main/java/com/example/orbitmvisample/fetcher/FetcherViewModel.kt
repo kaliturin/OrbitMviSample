@@ -45,7 +45,7 @@ open class FetcherViewModel<T : Any>(
      * @param refreshCache if true - then after response from cache VM trying to fetch a value from [FetcherService]
      */
     fun request(
-        arguments: FetcherArguments<T> = FetcherArgumentsDefault(),
+        arguments: FetcherArguments<T> = DefaultFetcherArguments(),
         cleanCache: Boolean = false,
         refreshCache: Boolean = false,
         withResponseId: Boolean = this.withResponseId.get()

@@ -26,7 +26,8 @@ fun <T : Any> FetcherService<T>.withLayerCache(
 private class FetcherServiceWrapper<T : Any>(
     private val cache: Cache<FetcherArguments<T>, T>
 ) : FetcherService<T> {
-    override suspend fun request(arguments: FetcherArguments<T>): T? {
-        return cache.get(arguments)
-    }
+    override suspend fun request(arguments: FetcherArguments<T>): T? = cache.get(arguments)
+    override suspend fun get(key: FetcherArguments<T>): T? = cache.get(key)
+    override suspend fun evictAll() = cache.evictAll()
+    override suspend fun evict(key: FetcherArguments<T>) = cache.evict(key)
 }
