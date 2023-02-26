@@ -32,7 +32,9 @@ open class FetcherViewModel<T : Any>(
      * If false and in case of using data class of [FetcherArguments] implementation, then the VM
      * won't respond with the same states as it is conventional for [kotlinx.coroutines.flow.StateFlow]
      */
-    var withResponseId = AtomicBoolean(true)
+    fun withResponseId(value: Boolean) = apply { withResponseId.set(value) }
+
+    private val withResponseId = AtomicBoolean(true)
 
     private var requestCounter = AtomicLong(0)
 
