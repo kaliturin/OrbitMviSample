@@ -11,9 +11,10 @@ import com.example.orbitmvisample.cache.CacheManager
 import com.example.orbitmvisample.cache.impl.CACHE_10_SEC
 import com.example.orbitmvisample.cache.impl.CACHE_30_SEC
 import com.example.orbitmvisample.cache.impl.defaultListOfCacheSettings
-import com.example.orbitmvisample.experimental.IntCatchingService
+import com.example.orbitmvisample.experimental.MultiIntFetcherService
+import com.example.orbitmvisample.fetcher.FetcherViewModel
+import com.example.orbitmvisample.fetcher.withLayerCache
 import com.example.orbitmvisample.service.IntFetcherService
-import com.example.orbitmvisample.vm.IntViewModel
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.androidx.viewmodel.dsl.viewModel
@@ -24,6 +25,7 @@ import org.koin.dsl.module
 
 typealias MemoryCacheManager = CacheManager
 typealias PreferencesCacheManager = CacheManager
+typealias IntViewModel = FetcherViewModel<Int>
 
 object MviKoinModule {
 
@@ -67,13 +69,17 @@ object MviKoinModule {
 
         // Services impl
         single { IntFetcherService() }
+
         single {
-            IntCatchingService(get(), get<CacheManager>().get(CACHE_10_SEC))
+            val cache = get<MemoryCacheManager>().get<Int>(CACHE_10_SEC)!!
+            val service1 = get<IntFetcherService>().withLayerCache(cache)
+            val service2 = get<IntFetcherService>().withLayerCache(cache)
+            MultiIntFetcherService(service1, service2)
         }
 
         // ViewModels impl
         viewModel {
-            IntViewModel(get(), get(), get(named("layerCache")))
+            IntViewModel(get<IntFetcherService>(), get(), get(named("layerCache")))
         }
     }
 }
