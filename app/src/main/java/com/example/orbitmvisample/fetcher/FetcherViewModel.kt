@@ -13,6 +13,8 @@ import org.orbitmvi.orbit.syntax.simple.intent
 import org.orbitmvi.orbit.syntax.simple.reduce
 import org.orbitmvi.orbit.viewmodel.container
 import timber.log.Timber
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicLong
 
 /**
  * VM with data fetching service and optional cache service
@@ -30,9 +32,9 @@ open class FetcherViewModel<T : Any>(
      * If false and in case of using data class of [FetcherArguments] implementation, then the VM
      * won't respond with the same states as it is conventional for [kotlinx.coroutines.flow.StateFlow]
      */
-    var withResponseId: Boolean = true
+    var withResponseId = AtomicBoolean(true)
 
-    private var requestCounter: Long = 0
+    private var requestCounter = AtomicLong(0)
 
     /**
      * Sends request to VM to start for emitting [Response] states
@@ -41,23 +43,23 @@ open class FetcherViewModel<T : Any>(
      * @param refreshCache if true - then after response from cache VM trying to fetch a value from [FetcherService]
      */
     fun request(
-        arguments: FetcherArguments<T>? = null,
+        arguments: FetcherArguments<T> = FetcherArgumentsDefault(),
         cleanCache: Boolean = false,
         refreshCache: Boolean = false,
-        withResponseId: Boolean = this.withResponseId
+        withResponseId: Boolean = this.withResponseId.get()
     ) = intent {
 
         var refreshCacheStared = false
 
         // build response info
-        val responseId = if (withResponseId) ++requestCounter else 0
+        val responseId = if (withResponseId) requestCounter.addAndGet(1) else 0
         val info = ResponseInfo(responseId = responseId, arguments = arguments)
 
         // build a cache key
         val key = cacheKeyBuilder?.build(arguments)
 
         if (key != null) {
-            // clear cache if required
+            // clean cache if required
             if (cleanCache) {
                 cleanCache(key)
             } else {
@@ -104,37 +106,47 @@ open class FetcherViewModel<T : Any>(
             return@intent
         }
 
-        // put the value to the cache only if a cache key is provided and the value is valid for caching
-        if (key != null && arguments?.isCaching(value) == true) {
+        if (cacheService != null && key != null && value != null && arguments.isCaching(value)) {
             try {
-                cacheService?.set(key, value)
+                // put the value to the cache
+                cacheService.set(key, value)
             } catch (e: Exception) {
                 Timber.e(e, "Error on cache value setting with key=$key")
             }
         }
 
         // state of response with data from the fetcher
-        reduce { Response.Data(info.copy(origin = ResponseOrigin.Fetcher), value) }
+        reduce {
+            if (value != null)
+                Response.Data(info.copy(origin = ResponseOrigin.Fetcher), value)
+            else
+                Response.NoNewData(info.copy(origin = ResponseOrigin.Fetcher))
+        }
     }
 
-    suspend fun cleanCache(arguments: FetcherArguments<T>?) {
-        cacheKeyBuilder?.build(arguments)?.let { cleanCache(it) }
+    suspend fun cleanCache(arguments: FetcherArguments<T>) {
+        withContext(Dispatchers.Default) {
+            try {
+                fetcherService.evict(arguments)
+            } catch (e: Exception) {
+                Timber.e(e, "Error on cache cleaning with key=$arguments")
+            }
+            cacheKeyBuilder?.build(arguments)?.let { cleanCache(it) }
+        }
     }
 
     private suspend fun cleanCache(key: Any) {
-        withContext(Dispatchers.Default) {
-            try {
-                cacheService?.evict(key)
-            } catch (e: Exception) {
-                Timber.e(e, "Error on cache clearing with key=$key")
-            }
+        try {
+            cacheService?.evict(key)
+        } catch (e: Exception) {
+            Timber.e(e, "Error on cache cleaning with key=$key")
         }
     }
 
     init {
         if (cacheService != null && cacheKeyBuilder == null) {
             // build default cache key builder
-            cacheKeyBuilder = CacheKeyBuilderAny(fetcherService.name())
+            cacheKeyBuilder = CacheKeyBuilderAny(fetcherService::class.qualifiedName)
         }
     }
 }
