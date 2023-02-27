@@ -15,4 +15,4 @@ interface FetcherArguments<T> {
     fun isCaching(value: T): Boolean = true
 }
 
-data class DefaultFetcherArguments<T>(val name: String = "default") : FetcherArguments<T>
+data class FetcherArgumentsDefault<T>(val name: String = "default") : FetcherArguments<T>

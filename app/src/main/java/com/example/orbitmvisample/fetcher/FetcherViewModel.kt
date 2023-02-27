@@ -5,7 +5,7 @@ import com.appmattus.layercache.Cache
 import com.example.orbitmvisample.apierrorhandler.ApiErrorHandler
 import com.example.orbitmvisample.apierrorhandler.ApiException
 import com.example.orbitmvisample.cache.CacheKeyBuilder
-import com.example.orbitmvisample.cache.CacheKeyBuilderAny
+import com.example.orbitmvisample.cache.CacheKeyBuilderDefault
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.orbitmvi.orbit.ContainerHost
@@ -45,7 +45,7 @@ open class FetcherViewModel<T : Any>(
      * @param refreshCache if true - then after response from cache VM trying to fetch a value from [FetcherService]
      */
     fun request(
-        arguments: FetcherArguments<T> = DefaultFetcherArguments(),
+        arguments: FetcherArguments<T> = FetcherArgumentsDefault(),
         cleanCache: Boolean = false,
         refreshCache: Boolean = false,
         withResponseId: Boolean = this.withResponseId.get()
@@ -53,7 +53,7 @@ open class FetcherViewModel<T : Any>(
 
         var refreshCacheStared = false
 
-        // build response info
+        // build the response info
         val responseId = if (withResponseId) requestCounter.addAndGet(1) else 0
         val info = ResponseInfo(responseId = responseId, arguments = arguments)
 
@@ -73,18 +73,20 @@ open class FetcherViewModel<T : Any>(
                     null
                 }
                 value?.let {
-                    // state of response with data from the cache
+                    // response with data from the cache
                     reduce { Response.Data(info.copy(origin = ResponseOrigin.Cache), it) }
                     if (refreshCache) refreshCacheStared = true else return@intent
                 }
             }
         }
 
+        val fetcherInfo = info.copy(origin = ResponseOrigin.Fetcher)
+
         val isAlreadyLoading = state is Response.Loading
 
         if (!refreshCacheStared) {
-            // state of response about loading is started
-            reduce { Response.Loading(info.copy(origin = ResponseOrigin.Fetcher)) }
+            // response about loading is started
+            reduce { Response.Loading(fetcherInfo) }
         }
 
         // if loading was already started - don't fetch again
@@ -99,11 +101,9 @@ open class FetcherViewModel<T : Any>(
             Timber.e(e, "Error on requesting to fetcher with args=$arguments")
             // convert the exception to ApiException and handle it by default
             val apiException = errorHandler?.handle(e) ?: ApiException(cause = e)
-            // then state of response with the error on data fetching
+            // then response with the error on data fetching
             reduce {
-                Response.Error.Exception(
-                    apiException, info.copy(origin = ResponseOrigin.Fetcher)
-                )
+                Response.Error.Exception(apiException, fetcherInfo)
             }
             return@intent
         }
@@ -117,12 +117,12 @@ open class FetcherViewModel<T : Any>(
             }
         }
 
-        // state of response with data from the fetcher
+        // response with data from the fetcher
         reduce {
-            if (value != null)
-                Response.Data(info.copy(origin = ResponseOrigin.Fetcher), value)
+            if (value == null)
+                Response.NoNewData(fetcherInfo)
             else
-                Response.NoNewData(info.copy(origin = ResponseOrigin.Fetcher))
+                Response.Data(fetcherInfo, value)
         }
     }
 
@@ -148,7 +148,7 @@ open class FetcherViewModel<T : Any>(
     init {
         if (cacheService != null && cacheKeyBuilder == null) {
             // build default cache key builder
-            cacheKeyBuilder = CacheKeyBuilderAny(fetcherService::class.qualifiedName)
+            cacheKeyBuilder = CacheKeyBuilderDefault(fetcherService::class.qualifiedName)
         }
     }
 }

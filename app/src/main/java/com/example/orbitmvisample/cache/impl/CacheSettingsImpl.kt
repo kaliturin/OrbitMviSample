@@ -28,7 +28,12 @@ val defaultListOfCacheSettings = listOf(
         cacheType = CacheType.CACHE2K
     ),
     CacheSettings(cacheName = CACHE_3_SEC, capacity = 50, timeToExpire = 3),
-    CacheSettings(cacheName = CACHE_10_SEC, capacity = 50, timeToExpire = 10),
+    CacheSettings(
+        cacheName = CACHE_10_SEC,
+        capacity = 50,
+        timeToExpire = 10,
+        cacheType = CacheType.PREFERENCES
+    ),
     CacheSettings(cacheName = CACHE_15_SEC, capacity = 100, timeToExpire = 15),
     CacheSettings(cacheName = CACHE_30_SEC, capacity = 100, timeToExpire = 30),
     CacheSettings(cacheName = CACHE_1_MIN, capacity = 200, timeToExpire = 60),
