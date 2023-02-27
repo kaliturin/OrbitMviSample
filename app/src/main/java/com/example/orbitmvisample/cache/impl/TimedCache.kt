@@ -1,20 +1,18 @@
 package com.example.orbitmvisample.cache.impl
 
 import com.appmattus.layercache.Cache
+import com.appmattus.layercache.createLruCache
 import com.example.orbitmvisample.cache.CacheSettings
 
 fun <K : Any, V : Any> Cache<String, String>.asTimedJsonCache(
     settings: CacheSettings
 ): Cache<K, V> = TimedCache(asJsonCache(), settings)
 
-fun <K : Any, V : Any> Cache<K, V>.asTimedCache(
+fun <K : Any, V : Any> Cache.Companion.createTimedLruCache(
     settings: CacheSettings
 ): Cache<K, V> {
-    val cache = valueTransform(
-        { TimedCache.TimedValue(settings.timeToExpireMills + currentTime(), it) },
-        { it.value }
-    )
-    return TimedCache(cache, settings)
+    val lruCache = Cache.createLruCache<K, TimedCache.TimedValue<V>>(settings.capacity)
+    return TimedCache(lruCache, settings)
 }
 
 private class TimedCache<K : Any, V : Any>(
@@ -45,10 +43,10 @@ private class TimedCache<K : Any, V : Any>(
         cache.set(key, TimedValue(settings.timeToExpireMills + currentTime(), value))
     }
 
+    private fun currentTime(): Long = System.currentTimeMillis()
+
     data class TimedValue<V>(
         val time: Long,
         val value: V
     )
 }
-
-private fun currentTime(): Long = System.currentTimeMillis()

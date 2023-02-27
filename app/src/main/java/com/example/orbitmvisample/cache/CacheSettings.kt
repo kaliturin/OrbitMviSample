@@ -12,7 +12,7 @@ class CacheSettings(
     val timeUnit: TimeUnit = TimeUnit.SECONDS,
     val keepDataAfterExpired: Boolean = false,
     val eternal: Boolean = false,
-    val cacheType: CacheType = CacheType.CACHE2K
+    val cacheType: CacheType = CacheType.LRU
 ) {
     val timeToExpireMills = timeUnit.toMillis(timeToExpire)
 }

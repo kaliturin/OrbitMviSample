@@ -27,7 +27,7 @@ class PreferencesCacheBuilder(
             ?.asStringCache()
             ?.encrypt(context)
 
-        return if (settings.timeToExpire != 0L)
+        return if (settings.timeToExpire >= 0L)
             cache?.asTimedJsonCache(settings)
         else
             cache?.asJsonCache(clazz)

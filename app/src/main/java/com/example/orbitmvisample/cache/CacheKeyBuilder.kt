@@ -11,7 +11,7 @@ interface CacheKeyBuilder {
     fun build(cacheOwner: String?, arguments: FetcherArguments<*>): Any
 }
 
-class CacheKeyBuilderAny(private val cacheOwner: String?) : CacheKeyBuilder {
+class CacheKeyBuilderDefault(private val cacheOwner: String?) : CacheKeyBuilder {
     override fun build(arguments: FetcherArguments<*>): Any {
         return build(cacheOwner, arguments)
     }

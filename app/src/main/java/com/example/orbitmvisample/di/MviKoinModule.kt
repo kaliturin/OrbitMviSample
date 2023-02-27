@@ -9,7 +9,7 @@ import com.example.orbitmvisample.apierrorhandler.impl.ApiExceptionBuilderImpl
 import com.example.orbitmvisample.cache.CacheBuilderProvider
 import com.example.orbitmvisample.cache.CacheManager
 import com.example.orbitmvisample.cache.impl.CACHE_10_SEC
-import com.example.orbitmvisample.cache.impl.CACHE_30_SEC
+import com.example.orbitmvisample.cache.impl.CACHE_3_SEC
 import com.example.orbitmvisample.cache.impl.defaultListOfCacheSettings
 import com.example.orbitmvisample.experimental.MultiIntFetcherService
 import com.example.orbitmvisample.fetcher.FetcherViewModel
@@ -23,8 +23,6 @@ import org.koin.core.logger.Level
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
-typealias MemoryCacheManager = CacheManager
-typealias PreferencesCacheManager = CacheManager
 typealias IntViewModel = FetcherViewModel<Int>
 
 object MviKoinModule {
@@ -41,25 +39,17 @@ object MviKoinModule {
 
         single { CacheBuilderProvider(androidContext()) }
 
-        // In memory cache manager
+        // Cache manager
         single {
-            MemoryCacheManager(
-                cacheBuilderProvider = get(),
-                settings = defaultListOfCacheSettings.toTypedArray()
-            )
-        }
-
-        // Persistent cache manager
-        single {
-            PreferencesCacheManager(
+            CacheManager(
                 cacheBuilderProvider = get(),
                 settings = defaultListOfCacheSettings.toTypedArray()
             )
         }
 
         single(named("layerCache")) {
-            val memoryCache = get<MemoryCacheManager>().get<Int>(CACHE_10_SEC)
-            val persistCache = get<PreferencesCacheManager>().get<Int>(CACHE_30_SEC)
+            val memoryCache = get<CacheManager>().get<Int>(CACHE_3_SEC)
+            val persistCache = get<CacheManager>().get<Int>(CACHE_10_SEC)
             memoryCache!! + persistCache!!
         }
 
@@ -71,7 +61,7 @@ object MviKoinModule {
         single { IntFetcherService() }
 
         single {
-            val cache = get<MemoryCacheManager>().get<Int>(CACHE_10_SEC)!!
+            val cache = get<CacheManager>().get<Int>(CACHE_10_SEC)!!
             val service1 = get<IntFetcherService>().withLayerCache(cache)
             val service2 = get<IntFetcherService>().withLayerCache(cache)
             MultiIntFetcherService(service1, service2)

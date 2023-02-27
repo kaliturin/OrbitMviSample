@@ -2,14 +2,14 @@ package com.example.orbitmvisample.fetcher
 
 import com.appmattus.layercache.Cache
 import com.example.orbitmvisample.cache.CacheKeyBuilder
-import com.example.orbitmvisample.cache.CacheKeyBuilderAny
+import com.example.orbitmvisample.cache.CacheKeyBuilderDefault
 
 /**
  * Adds the cache as a layer cache of the fetcher service
  */
 fun <T : Any> Cache<Any, T>.asLayerCacheOfService(
     fetcherService: FetcherService<T>,
-    cacheKeyBuilder: CacheKeyBuilder = CacheKeyBuilderAny(fetcherService::class.qualifiedName)
+    cacheKeyBuilder: CacheKeyBuilder = CacheKeyBuilderDefault(fetcherService::class.qualifiedName)
 ): Cache<FetcherArguments<T>, T> = keyTransform<FetcherArguments<T>> {
     cacheKeyBuilder.build(it)
 }.compose(fetcherService)
@@ -19,7 +19,7 @@ fun <T : Any> Cache<Any, T>.asLayerCacheOfService(
  */
 fun <T : Any> FetcherService<T>.withLayerCache(
     cache: Cache<Any, T>,
-    cacheKeyBuilder: CacheKeyBuilder = CacheKeyBuilderAny(this::class.qualifiedName)
+    cacheKeyBuilder: CacheKeyBuilder = CacheKeyBuilderDefault(this::class.qualifiedName)
 ): FetcherService<T> =
     FetcherServiceWrapper(cache.asLayerCacheOfService(this, cacheKeyBuilder))
 

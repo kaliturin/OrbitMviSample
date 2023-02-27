@@ -16,7 +16,7 @@ interface Fetcher<T : Any> : Cache<FetcherArguments<T>, T> {
 }
 
 interface FetcherService<T : Any> : Fetcher<T> {
-    suspend fun request(arguments: FetcherArguments<T> = DefaultFetcherArguments()): T?
+    suspend fun request(arguments: FetcherArguments<T> = FetcherArgumentsDefault()): T?
 
     override suspend fun get(key: FetcherArguments<T>): T? = request(key)
 }
