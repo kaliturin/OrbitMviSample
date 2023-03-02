@@ -1,6 +1,6 @@
 package com.example.orbitmvisample.apierrorhandler
 
-enum class ApiErrorCode(val code: String) {
+enum class AppErrorCode(val code: String) {
     UNKNOWN("Unknown"),
     RESPONSE_BODY_IS_EMPTY("ResponseBodyIsEmpty"),
     RESPONSE_PARSING_ERROR("ResponseParsingError"),
@@ -16,7 +16,7 @@ enum class ApiErrorCode(val code: String) {
     override fun toString(): String = code
 
     companion object {
-        fun parse(code: String?): ApiErrorCode {
+        fun parse(code: String?): AppErrorCode {
             return values().find { it.code == code } ?: UNKNOWN
         }
     }

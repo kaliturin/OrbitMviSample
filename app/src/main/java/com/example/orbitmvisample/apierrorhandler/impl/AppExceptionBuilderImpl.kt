@@ -5,11 +5,11 @@ import androidx.annotation.StringRes
 import androidx.annotation.WorkerThread
 import com.example.orbitmvisample.BuildConfig
 import com.example.orbitmvisample.R
-import com.example.orbitmvisample.apierrorhandler.ApiErrorCode
-import com.example.orbitmvisample.apierrorhandler.ApiErrorCode.*
-import com.example.orbitmvisample.apierrorhandler.ApiException
-import com.example.orbitmvisample.apierrorhandler.ApiExceptionBuilder
-import com.example.orbitmvisample.apierrorhandler.impl.ApiExceptionBuilderImpl.ApiErrorMessage.*
+import com.example.orbitmvisample.apierrorhandler.AppErrorCode
+import com.example.orbitmvisample.apierrorhandler.AppErrorCode.*
+import com.example.orbitmvisample.apierrorhandler.AppException
+import com.example.orbitmvisample.apierrorhandler.AppExceptionBuilder
+import com.example.orbitmvisample.apierrorhandler.impl.AppExceptionBuilderImpl.AppErrorMessage.*
 import com.example.orbitmvisample.utils.JsonUtils
 import com.fasterxml.jackson.databind.JsonMappingException
 import retrofit2.HttpException
@@ -19,35 +19,35 @@ import java.net.SocketTimeoutException
 import java.net.UnknownHostException
 import javax.net.ssl.SSLException
 
-class ApiExceptionBuilderImpl(private val resources: Resources) : ApiExceptionBuilder {
+class AppExceptionBuilderImpl(private val resources: Resources) : AppExceptionBuilder {
 
-    override suspend fun build(throwable: Throwable): ApiException {
+    override suspend fun build(throwable: Throwable): AppException {
         return when (throwable) {
-            is ApiException -> throwable
+            is AppException -> throwable
             is HttpException -> parse(throwable)
             is SocketTimeoutException ->
-                ApiException(CONNECTION_LOST, MSG_REQUEST_TIME_LIMIT.str, throwable)
+                AppException(CONNECTION_LOST, MSG_REQUEST_TIME_LIMIT.str, throwable)
             is SocketException, is UnknownHostException ->
-                ApiException(CONNECTION_LOST, MSG_CONNECTION_LOST.str, throwable)
+                AppException(CONNECTION_LOST, MSG_CONNECTION_LOST.str, throwable)
             is JsonMappingException ->
-                ApiException(JSON_PARSING, MSG_SERVER_MSG_PARSING.str, throwable)
+                AppException(JSON_PARSING, MSG_SERVER_MSG_PARSING.str, throwable)
             is SSLException ->
-                ApiException(SSL_EXCEPTION, MSG_CONNECTION_ERROR.str, throwable)
+                AppException(SSL_EXCEPTION, MSG_CONNECTION_ERROR.str, throwable)
             else -> {
                 if (BuildConfig.DEBUG)
-                    ApiException(throwable.toString(), throwable)
+                    AppException(throwable.toString(), throwable)
                 else // create user-friendly error message for production
-                    ApiException(MSG_ERROR_HAPPENED.str, throwable)
+                    AppException(MSG_ERROR_HAPPENED.str, throwable)
             }
         }
     }
 
     @WorkerThread
-    private fun parse(exception: HttpException): ApiException {
+    private fun parse(exception: HttpException): AppException {
         val response = exception.response()
 
         if (response?.code() == GATEWAY_TIMEOUT_CODE)
-            return ApiException(GATEWAY_TIMEOUT, MSG_GATEWAY_TIMEOUT.str)
+            return AppException(GATEWAY_TIMEOUT, MSG_GATEWAY_TIMEOUT.str)
 
         val errorBody = response?.errorBody()
         return if (errorBody != null) {
@@ -62,20 +62,20 @@ class ApiExceptionBuilderImpl(private val resources: Resources) : ApiExceptionBu
             val error = apiResponseError?.errors?.lastOrNull()
             if (error != null) {
                 // the error parsed successfully
-                val code = ApiErrorCode.parse(error.errorCode ?: error.error)
+                val code = AppErrorCode.parse(error.errorCode ?: error.error)
                 val message = error.errorMessageText ?: MSG_SERVICE_UNAVAILABLE.str
-                ApiException(code, message)
+                AppException(code, message)
             } else {
                 // fail to parse an error
-                ApiException(RESPONSE_PARSING_ERROR, MSG_SERVICE_UNAVAILABLE.str, cause)
+                AppException(RESPONSE_PARSING_ERROR, MSG_SERVICE_UNAVAILABLE.str, cause)
             }
         } else {
             // error body is empty
-            ApiException(RESPONSE_BODY_IS_EMPTY, MSG_RESPONSE_FORMAT.str)
+            AppException(RESPONSE_BODY_IS_EMPTY, MSG_RESPONSE_FORMAT.str)
         }
     }
 
-    private enum class ApiErrorMessage(@StringRes private val stringRes: Int) {
+    private enum class AppErrorMessage(@StringRes private val stringRes: Int) {
         MSG_RESPONSE_FORMAT(R.string.error_response_format),
         MSG_SERVICE_UNAVAILABLE(R.string.error_service_unavailable),
         MSG_GATEWAY_TIMEOUT(R.string.error_gateway_timeout),
@@ -90,7 +90,7 @@ class ApiExceptionBuilderImpl(private val resources: Resources) : ApiExceptionBu
         }
     }
 
-    private val ApiErrorMessage.str get() = this.toString(resources)
+    private val AppErrorMessage.str get() = this.toString(resources)
 
     companion object {
         private const val GATEWAY_TIMEOUT_CODE = 504

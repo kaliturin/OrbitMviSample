@@ -1,6 +1,6 @@
 package com.example.orbitmvisample.fetcher
 
-import com.example.orbitmvisample.apierrorhandler.ApiException
+import com.example.orbitmvisample.apierrorhandler.AppException
 
 /**
  * Holder for responses from [FetcherViewModel]
@@ -40,7 +40,7 @@ sealed class Response<out T> {
      */
     sealed class Error : Response<Nothing>() {
         data class Exception(
-            val error: ApiException,
+            val error: AppException,
             override val info: ResponseInfo,
         ) : Error()
 
