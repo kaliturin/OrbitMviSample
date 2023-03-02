@@ -24,7 +24,7 @@ sealed class Response<out T> {
      */
     data class Data<T>(
         override val info: ResponseInfo,
-        val value: T,
+        val value: T?,
     ) : Response<T>()
 
     /**
@@ -53,7 +53,7 @@ sealed class Response<out T> {
     /**
      * Returns the available data or throws [NullPointerException] if there is no data.
      */
-    fun requireData(): T {
+    fun requireData(): T? {
         return when (this) {
             is Data -> value
             is Error -> this.doThrow()
@@ -90,14 +90,6 @@ sealed class Response<out T> {
         is Data -> value
         else -> null
     }
-
-    @Suppress("UNCHECKED_CAST")
-    internal fun <R> swapType(): Response<R> = when (this) {
-        is Error -> this
-        is Loading -> this
-        is NoNewData -> this
-        is Data -> throw RuntimeException("cannot swap type for StoreResponse.Data")
-    }
 }
 
 /**
@@ -127,7 +119,7 @@ data class ResponseInfo(
      * Represents the source of the Response.
      */
     val origin: ResponseOrigin = ResponseOrigin.Undefined,
-    val responseId: Long = 0,
+    val requestId: Long = 0,
     val arguments: FetcherArguments<*>? = null
 ) {
     @Suppress("UNCHECKED_CAST")
