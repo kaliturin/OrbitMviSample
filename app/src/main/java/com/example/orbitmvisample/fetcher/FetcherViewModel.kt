@@ -1,9 +1,10 @@
 package com.example.orbitmvisample.fetcher
 
+import android.os.Bundle
 import androidx.lifecycle.ViewModel
 import com.appmattus.layercache.Cache
-import com.example.orbitmvisample.apierrorhandler.ApiErrorHandler
-import com.example.orbitmvisample.apierrorhandler.ApiException
+import com.example.orbitmvisample.apierrorhandler.AppErrorHandler
+import com.example.orbitmvisample.apierrorhandler.AppException
 import com.example.orbitmvisample.cache.CacheKeyBuilder
 import com.example.orbitmvisample.cache.CacheKeyBuilderDefault
 import kotlinx.coroutines.*
@@ -21,7 +22,7 @@ import java.util.concurrent.atomic.AtomicLong
  */
 open class FetcherViewModel<T : Any>(
     private val fetcherService: FetcherService<T>,
-    private val errorHandler: ApiErrorHandler? = null,
+    private val errorHandler: AppErrorHandler? = null,
     private val cacheService: Cache<Any, T>? = null,
     private var cacheKeyBuilder: CacheKeyBuilder = CacheKeyBuilderDefault(fetcherService::class.qualifiedName)
 ) : ViewModel(), ContainerHost<Response<T>, Nothing> {
@@ -33,6 +34,14 @@ open class FetcherViewModel<T : Any>(
     private val ignoringResponsesIds = ConcurrentHashMap<Long, Boolean>()
     private val pendingRequestsByIds = ConcurrentHashMap<Long, Deferred<T?>>()
     private val pendingRequestsByKeys = ConcurrentHashMap<Any, Deferred<T?>>()
+    private var errorHandlerSettings: Bundle? = null
+
+    /**
+     * Injects settings for AppErrorHandler
+     */
+    fun errorHandlerSettings(settings: Bundle?) = apply {
+        errorHandlerSettings = settings
+    }
 
     /**
      * Cancels current pending requests
@@ -101,7 +110,7 @@ open class FetcherViewModel<T : Any>(
             pendingRequestsByIds[requestId] = deferred
             val value = try {
                 deferred.await().also { cleanUp(requestId) }
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 reduce { state } // response with the current state
                 cleanUp(requestId)
                 return@intent
@@ -129,9 +138,10 @@ open class FetcherViewModel<T : Any>(
             } else {
                 Timber.e(e, "Error on requesting to fetcher with args=$arguments")
                 // convert the exception to ApiException and handle it by default
-                val apiException = errorHandler?.handle(e) ?: ApiException(cause = e)
+                val appException = errorHandler?.handle(e, errorHandlerSettings)
+                    ?: AppException(cause = e)
                 // then response with the error on data fetching
-                reduce { Response.Error.Exception(apiException, fetcherInfo) }
+                reduce { Response.Error.Exception(appException, fetcherInfo) }
             }
             return@intent
         }
@@ -204,5 +214,6 @@ open class FetcherViewModel<T : Any>(
         ignoringResponsesIds.clear()
         pendingRequestsByIds.clear()
         pendingRequestsByKeys.clear()
+        errorHandlerSettings = null
     }
 }

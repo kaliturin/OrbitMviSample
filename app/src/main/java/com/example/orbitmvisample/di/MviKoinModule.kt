@@ -1,11 +1,11 @@
 package com.example.orbitmvisample.di
 
 import android.app.Application
-import com.example.orbitmvisample.apierrorhandler.ApiErrorHandler
-import com.example.orbitmvisample.apierrorhandler.ApiExceptionBuilder
-import com.example.orbitmvisample.apierrorhandler.impl.ApiErrorHandlerImpl
-import com.example.orbitmvisample.apierrorhandler.impl.ApiErrorPropagator
-import com.example.orbitmvisample.apierrorhandler.impl.ApiExceptionBuilderImpl
+import com.example.orbitmvisample.apierrorhandler.AppErrorHandler
+import com.example.orbitmvisample.apierrorhandler.AppExceptionBuilder
+import com.example.orbitmvisample.apierrorhandler.impl.AppErrorHandlerDispatcher
+import com.example.orbitmvisample.apierrorhandler.impl.AppErrorHandlerPropagator
+import com.example.orbitmvisample.apierrorhandler.impl.AppExceptionBuilderImpl
 import com.example.orbitmvisample.cache.CacheBuilderProvider
 import com.example.orbitmvisample.cache.CacheManager
 import com.example.orbitmvisample.cache.impl.CACHE_10_SEC
@@ -53,8 +53,13 @@ object MviKoinModule {
         }
 
         // Error handler
-        single<ApiExceptionBuilder> { ApiExceptionBuilderImpl(androidContext().resources) }
-        single<ApiErrorHandler> { ApiErrorHandlerImpl(get(), ApiErrorPropagator()) }
+        single<AppExceptionBuilder> { AppExceptionBuilderImpl(androidContext().resources) }
+        single<AppErrorHandler> {
+            AppErrorHandlerDispatcher(
+                get(),
+                AppErrorHandlerPropagator(androidContext())
+            )
+        }
 
         // Services impl
         single { IntFetcherService() }
