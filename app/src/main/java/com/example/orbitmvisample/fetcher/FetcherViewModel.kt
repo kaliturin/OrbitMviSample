@@ -114,7 +114,6 @@ open class FetcherViewModel<T : Any>(
         val value = try {
             coroutineScope {
                 async(Dispatchers.IO) {
-                    Timber.e("fetcherService.request(arguments)")
                     fetcherService.request(arguments)
                 }.let { deferred ->
                     pendingRequestsByKeys[key] = deferred
