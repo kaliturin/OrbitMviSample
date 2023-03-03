@@ -4,7 +4,7 @@ import android.os.Bundle
 import android.view.View
 import androidx.fragment.app.Fragment
 import com.example.orbitmvisample.R
-import com.example.orbitmvisample.apierrorhandler.impl.AppErrorHandlerPropagator
+import com.example.orbitmvisample.apierrorhandler.impl.suppressAlerts
 import com.example.orbitmvisample.di.IntViewModel
 import com.example.orbitmvisample.fetcher.Response
 import com.example.orbitmvisample.service.IntFetcherService
@@ -21,7 +21,7 @@ class MainFragment : Fragment(R.layout.fragment_main) {
         view.findViewById<View>(R.id.button).setOnClickListener {
             val args = IntFetcherService.Arguments(100)
             viewModel
-                .errorHandlerSettings(AppErrorHandlerPropagator.settings(suppressAlert = true))
+                .suppressAlerts()
                 .ignorePendingRequests()
                 .request(args)
         }

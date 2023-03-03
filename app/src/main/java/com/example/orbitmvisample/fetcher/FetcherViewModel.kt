@@ -2,6 +2,7 @@ package com.example.orbitmvisample.fetcher
 
 import android.os.Bundle
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.appmattus.layercache.Cache
 import com.example.orbitmvisample.apierrorhandler.AppErrorHandler
 import com.example.orbitmvisample.apierrorhandler.AppException
@@ -24,17 +25,18 @@ open class FetcherViewModel<T : Any>(
     private val fetcherService: FetcherService<T>,
     private val errorHandler: AppErrorHandler? = null,
     private val cacheService: Cache<Any, T>? = null,
-    private var cacheKeyBuilder: CacheKeyBuilder = CacheKeyBuilderDefault(fetcherService::class.qualifiedName)
+    private var cacheKeyBuilder: CacheKeyBuilder = CacheKeyBuilderDefault(fetcherService::class.qualifiedName),
+    cacheWarmUpOnInit: Boolean = true
 ) : ViewModel(), ContainerHost<Response<T>, Nothing> {
 
     override val container = container<Response<T>, Nothing>(Response.NoNewData())
 
+    private val fetcherRequests = PendingRequests<T>()
+    private val cacheRequests = PendingRequests<T>()
     private val withRequestId = AtomicBoolean(true)
     private val requestCounter = AtomicLong(0)
-    private val ignoringResponsesIds = ConcurrentHashMap<Long, Boolean>()
-    private val pendingRequestsByIds = ConcurrentHashMap<Long, Deferred<T?>>()
-    private val pendingRequestsByKeys = ConcurrentHashMap<Any, Deferred<T?>>()
     private var errorHandlerSettings: Bundle? = null
+    private var cancelPendingRequestsOnClearedVM = true
 
     /**
      * Injects settings for AppErrorHandler
@@ -47,16 +49,19 @@ open class FetcherViewModel<T : Any>(
      * Cancels current pending requests
      */
     fun cancelPendingRequests() = apply {
-        pendingRequestsByIds.values.forEach { it.cancel() }
-        pendingRequestsByIds.clear()
-        pendingRequestsByKeys.clear()
+        fetcherRequests.cancel()
     }
 
     /**
      * Allows to ignore the responses of the current pending requests but cache its results
      */
     fun ignorePendingRequests() = apply {
-        pendingRequestsByIds.keys.forEach { ignoringResponsesIds[it] = true }
+        fetcherRequests.ignore()
+        cacheRequests.ignore()
+    }
+
+    fun cancelPendingRequestsOnClearedVM(value: Boolean) = apply {
+        cancelPendingRequestsOnClearedVM = value
     }
 
     /**
@@ -71,7 +76,7 @@ open class FetcherViewModel<T : Any>(
         refreshCache: Boolean = false
     ) = intent {
 
-        var refreshCacheStared = false
+        var cacheRefreshingStared = false
 
         // build a response info
         val requestId = nextRequestId()
@@ -84,56 +89,61 @@ open class FetcherViewModel<T : Any>(
         if (cleanCache) {
             cleanCache(arguments)
         } else {
+            val cacheInfo = info.copy(origin = ResponseOrigin.Cache)
+
+            if (checkIfTheSameRequestIsPending(
+                    cacheRequests, requestId, key, cacheInfo, false
+                )
+            ) return@intent
+
             // get a value from the cache
             val value = try {
-                cacheService?.get(key)
+                coroutineScope {
+                    async(Dispatchers.IO) {
+                        cacheService?.get(key)
+                    }.let {
+                        cacheRequests.setAsync(requestId, key, it)
+                        it.await()
+                    }
+                }
             } catch (e: Exception) {
                 Timber.e(e, "Error on cache value getting with key=$key")
                 null
+            } finally {
+                cacheRequests.clean(requestId, key)
             }
             value?.let {
-                // response with data from the cache
-                reduce { Response.Data(info.copy(origin = ResponseOrigin.Cache), it) }
-                if (refreshCache) refreshCacheStared = true else return@intent
+                // response with the value from cache
+                reduce { Response.Data(cacheInfo, it) }
+                if (refreshCache) cacheRefreshingStared = true else return@intent
             }
         }
 
         val fetcherInfo = info.copy(origin = ResponseOrigin.Fetcher)
 
-        if (!refreshCacheStared) {
-            // response about loading is started
+        if (!cacheRefreshingStared) {
+            // response with the loading state
             reduce { Response.Loading(fetcherInfo) }
         }
 
-        // if the same request was already started - await its result
-        pendingRequestsByKeys[key]?.let { deferred ->
-            pendingRequestsByIds[requestId] = deferred
-            val value = try {
-                deferred.await().also { cleanUp(requestId) }
-            } catch (_: Exception) {
-                reduce { state } // response with the current state
-                cleanUp(requestId)
-                return@intent
-            }
-            responseWithValue(value, fetcherInfo)
-            return@intent
-        }
+        if (checkIfTheSameRequestIsPending(
+                fetcherRequests, requestId, key, fetcherInfo, true
+            )
+        ) return@intent
 
         // request a value from the fetcher
         val value = try {
             coroutineScope {
                 async(Dispatchers.IO) {
                     fetcherService.request(arguments)
-                }.let { deferred ->
-                    pendingRequestsByKeys[key] = deferred
-                    pendingRequestsByIds[requestId] = deferred
-                    deferred.await().also { cleanUp(requestId, key) }
+                }.let {
+                    fetcherRequests.setAsync(requestId, key, it)
+                    it.await()
                 }
             }
         } catch (e: Exception) {
             // cancellation of the request
             if (e is CancellationException) {
-                cleanUp(requestId, key)
                 reduce { state } // response with the current state
             } else {
                 Timber.e(e, "Error on requesting to fetcher with args=$arguments")
@@ -144,17 +154,20 @@ open class FetcherViewModel<T : Any>(
                 reduce { Response.Error.Exception(appException, fetcherInfo) }
             }
             return@intent
+        } finally {
+            fetcherRequests.clean(requestId, key)
         }
 
+        // cache the fetched value
         if (value != null && arguments.isCaching(value)) {
             try {
-                // put the value to the cache
                 cacheService?.set(key, value)
             } catch (e: Exception) {
                 Timber.e(e, "Error on cache value setting with key=$key")
             }
         }
 
+        // response with the value
         responseWithValue(value, fetcherInfo)
     }
 
@@ -180,15 +193,36 @@ open class FetcherViewModel<T : Any>(
      */
     fun withRequestId(value: Boolean) = apply { withRequestId.set(value) }
 
-    private fun responseWithValue(value: T?, info: ResponseInfo) = intent {
+    private fun responseWithValue(value: T?, responseInfo: ResponseInfo) = intent {
         reduce {
             // if response is in the ignoring list
-            if (ignoringResponsesIds.remove(info.requestId) == true) {
+            if (fetcherRequests.isIgnoring(responseInfo.requestId))
                 state // response with the current state
-            } else {
-                Response.Data(info, value)
-            }
+            else
+                Response.Data(responseInfo, value)
         }
+    }
+
+    // If the same request was already started - responses with its result
+    private suspend fun checkIfTheSameRequestIsPending(
+        pendingRequests: PendingRequests<T>, requestId: Long, cacheKey: Any,
+        responseInfo: ResponseInfo, valueIsNullable: Boolean
+    ): Boolean {
+        return pendingRequests.getAsync(requestId, cacheKey)?.let { deferred ->
+            val value = deferred.await()
+            if (valueIsNullable || value != null) {
+                intent {
+                    try {
+                        responseWithValue(value, responseInfo)
+                    } catch (e: Exception) {
+                        reduce { state } // response with the current state
+                    } finally {
+                        pendingRequests.clean(requestId)
+                    }
+                }
+                true
+            } else false
+        } ?: false
     }
 
     private suspend fun cleanCache(key: Any) {
@@ -199,21 +233,70 @@ open class FetcherViewModel<T : Any>(
         }
     }
 
-    @Suppress("DeferredResultUnused")
-    private fun cleanUp(requestId: Long, key: Any? = null) {
-        pendingRequestsByIds.remove(requestId)
-        key?.let { pendingRequestsByKeys.remove(key) }
-    }
-
     private fun nextRequestId(): Long {
         return if (withRequestId.get()) requestCounter.addAndGet(1) else 0
     }
 
     override fun onCleared() {
         super.onCleared()
-        ignoringResponsesIds.clear()
+        if (cancelPendingRequestsOnClearedVM) fetcherRequests.cancel()
+    }
+
+    // Some caches need "warming up" because the first request to cache takes much more time than following
+    private fun cacheWarmUp() {
+        cacheService ?: return
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                try {
+                    cacheService.get(0)
+                } catch (_: Exception) {
+                }
+            }
+        }
+    }
+
+    init {
+        if (cacheWarmUpOnInit) cacheWarmUp()
+    }
+}
+
+/**
+ * Pending requests container
+ */
+private class PendingRequests<T : Any> {
+    private val ignoringResponsesIds = ConcurrentHashMap<Long, Boolean>()
+    private val pendingRequestsByIds = ConcurrentHashMap<Long, Deferred<T?>>()
+    private val pendingRequestsByKeys = ConcurrentHashMap<Any, Deferred<T?>>()
+
+    fun cancel() = apply {
+        pendingRequestsByIds.values.forEach { it.cancel() }
         pendingRequestsByIds.clear()
         pendingRequestsByKeys.clear()
-        errorHandlerSettings = null
+        ignoringResponsesIds.clear()
+    }
+
+    fun ignore() = apply {
+        pendingRequestsByIds.keys.forEach { ignoringResponsesIds[it] = true }
+    }
+
+    fun getAsync(requestId: Long, key: Any): Deferred<T?>? {
+        return pendingRequestsByKeys[key]?.apply {
+            pendingRequestsByIds[requestId] = this
+        }
+    }
+
+    fun setAsync(requestId: Long, key: Any, deferred: Deferred<T?>) {
+        pendingRequestsByKeys[key] = deferred
+        pendingRequestsByIds[requestId] = deferred
+    }
+
+    @Suppress("DeferredResultUnused")
+    fun clean(requestId: Long, key: Any? = null) {
+        pendingRequestsByIds.remove(requestId)
+        key?.let { pendingRequestsByKeys.remove(key) }
+    }
+
+    fun isIgnoring(requestId: Long): Boolean {
+        return ignoringResponsesIds.remove(requestId) == true
     }
 }
