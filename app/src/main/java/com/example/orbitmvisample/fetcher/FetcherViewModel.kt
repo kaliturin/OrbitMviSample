@@ -60,7 +60,7 @@ open class FetcherViewModel<T : Any>(
         cacheRequests.ignore()
     }
 
-    fun cancelPendingRequestsOnClearedVM(value: Boolean) = apply {
+    fun cancelPendingRequestsOnClearVM(value: Boolean) = apply {
         cancelPendingRequestsOnClearedVM = value
     }
 
@@ -191,7 +191,12 @@ open class FetcherViewModel<T : Any>(
      * @param value If false and in case of using data class of [FetcherArguments] implementation, then the VM
      * won't respond with the same states as it is conventional for [kotlinx.coroutines.flow.StateFlow]
      */
-    fun withRequestId(value: Boolean) = apply { withRequestId.set(value) }
+    fun withRequestId(value: Boolean = true) = apply { withRequestId.set(value) }
+
+    /**
+     * @see [withRequestId]
+     */
+    fun withoutRequestId() = withRequestId(false)
 
     private fun responseWithValue(value: T?, responseInfo: ResponseInfo) = intent {
         reduce {
