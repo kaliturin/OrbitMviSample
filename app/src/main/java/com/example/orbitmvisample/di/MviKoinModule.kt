@@ -9,6 +9,7 @@ import com.example.orbitmvisample.apierrorhandler.impl.AppExceptionBuilderImpl
 import com.example.orbitmvisample.cache.CacheBuilderProvider
 import com.example.orbitmvisample.cache.CacheManager
 import com.example.orbitmvisample.cache.impl.CACHE_10_SEC
+import com.example.orbitmvisample.cache.impl.CACHE_15_SEC
 import com.example.orbitmvisample.cache.impl.defaultListOfCacheSettings
 import com.example.orbitmvisample.experimental.MultiIntFetcherService
 import com.example.orbitmvisample.fetcher.FetcherViewModel
@@ -48,8 +49,8 @@ object MviKoinModule {
 
         single(named("layerCache")) {
             val memoryCache = get<CacheManager>().get<Int>(CACHE_10_SEC)
-            //val persistCache = get<CacheManager>().get<Int>(CACHE_15_SEC)
-            memoryCache//!! + persistCache!!
+            val persistCache = get<CacheManager>().get<Int>(CACHE_15_SEC)
+            memoryCache!! + persistCache!!
         }
 
         // Error handler

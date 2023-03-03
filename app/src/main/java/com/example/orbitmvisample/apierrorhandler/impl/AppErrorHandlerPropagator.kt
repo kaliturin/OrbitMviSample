@@ -7,6 +7,7 @@ import androidx.core.os.bundleOf
 import com.example.orbitmvisample.apierrorhandler.AppErrorCode
 import com.example.orbitmvisample.apierrorhandler.AppErrorHandler
 import com.example.orbitmvisample.apierrorhandler.AppException
+import com.example.orbitmvisample.fetcher.FetcherViewModel
 
 /**
  * Propagates specific types of handling exceptions
@@ -60,4 +61,8 @@ class AppErrorHandlerPropagator(
             SUPPRESS_ALERT to suppressAlert
         )
     }
+}
+
+fun <T : Any> FetcherViewModel<T>.suppressAlerts(suppressAlert: Boolean = true) = apply {
+    errorHandlerSettings(AppErrorHandlerPropagator.settings(suppressAlert))
 }
