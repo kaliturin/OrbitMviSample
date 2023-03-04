@@ -1,5 +1,6 @@
 package com.example.orbitmvisample.apierrorhandler.impl
 
+import android.content.Context
 import android.os.Bundle
 import com.example.orbitmvisample.apierrorhandler.AppErrorHandler
 import com.example.orbitmvisample.apierrorhandler.AppException
@@ -18,12 +19,14 @@ class AppErrorHandlerDispatcher(
     private vararg val handlers: AppErrorHandler
 ) : AppErrorHandler {
 
-    override suspend fun handle(throwable: Throwable, settings: Bundle?): AppException {
+    override suspend fun handle(
+        throwable: Throwable, context: Context?, settings: Bundle?
+    ): AppException {
         val exception = withContext(Dispatchers.Default) {
             builder.build(throwable)
         }
         Timber.e(exception.toString())
-        handlers.forEach { it.handle(exception, settings) }
+        handlers.forEach { it.handle(exception, context, settings) }
         return exception
     }
 }
