@@ -3,6 +3,7 @@ package com.example.orbitmvisample.apierrorhandler.impl
 import android.content.Context
 import android.os.Bundle
 import androidx.core.os.bundleOf
+import com.example.orbitmvisample.R
 import com.example.orbitmvisample.apierrorhandler.AppErrorCode
 import com.example.orbitmvisample.apierrorhandler.AppErrorHandler
 import com.example.orbitmvisample.apierrorhandler.AppException
@@ -50,13 +51,14 @@ class AppErrorHandlerPropagator(
             }
             else -> {
                 if (!settingsHelper.getBoolean(SUPPRESS_ALERT)) {
-                    // show alert message with the error message
-                    val alertData = AlertData(
-                        title = "Error", // TODO: strings.xml
-                        message = exception.message,
-                    )
                     try {
-                        alertManager.showAlert(context, alertData)
+                        // show the alert with the error message
+                        alertManager.showAlert(
+                            context, AlertData(
+                                title = context?.getString(R.string.error_title),
+                                message = exception.message,
+                            )
+                        )
                     } catch (e: Exception) {
                         Timber.e(e)
                     }
