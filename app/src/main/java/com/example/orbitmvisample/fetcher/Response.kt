@@ -51,6 +51,13 @@ sealed class Response<out T> {
     }
 
     /**
+     * Cancelled event dispatched by [FetcherViewModel] to signal the correspondent request was cancelled.
+     */
+    data class Cancelled(
+        override val info: ResponseInfo
+    ) : Response<Nothing>()
+
+    /**
      * Returns the available data or throws [NullPointerException] if there is no data.
      */
     fun requireData(): T? {

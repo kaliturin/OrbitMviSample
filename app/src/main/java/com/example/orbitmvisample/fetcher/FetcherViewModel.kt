@@ -48,16 +48,19 @@ open class FetcherViewModel<T : Any>(
     /**
      * Cancels current pending requests
      */
+    @Synchronized
     fun cancelPendingRequests() = apply {
+        cacheRequests.cancel()
         fetcherRequests.cancel()
     }
 
     /**
      * Allows to ignore the responses of the current pending requests but cache its results
      */
+    @Synchronized
     fun ignorePendingRequests() = apply {
-        fetcherRequests.ignore()
         cacheRequests.ignore()
+        fetcherRequests.ignore()
     }
 
     /**
@@ -81,6 +84,7 @@ open class FetcherViewModel<T : Any>(
      * @param cleanCache if true - then removes a value from the cache before fetching it from [FetcherService]
      * @param refreshCache if true - then after response from cache VM trying to fetch a value from [FetcherService]
      */
+    @Synchronized
     fun request(
         arguments: FetcherArguments<T> = FetcherArgumentsDefault(),
         cleanCache: Boolean = false,
@@ -91,7 +95,7 @@ open class FetcherViewModel<T : Any>(
 
         // build a response info
         val requestId = nextRequestId()
-        val info = ResponseInfo(requestId = requestId, arguments = arguments)
+        val responseInfo = ResponseInfo(requestId = requestId, arguments = arguments)
 
         // build a cache key
         val key = cacheKeyBuilder.build(arguments)
@@ -100,10 +104,10 @@ open class FetcherViewModel<T : Any>(
         if (cleanCache) {
             cleanCache(arguments)
         } else {
-            val cacheInfo = info.copy(origin = ResponseOrigin.Cache)
+            val cacheInfo = responseInfo.copy(origin = ResponseOrigin.Cache)
 
             if (checkIfTheSameRequestIsPending(
-                    cacheRequests, requestId, key, cacheInfo, false
+                    cacheInfo, cacheRequests, requestId, key, false
                 )
             ) return@intent
 
@@ -118,8 +122,14 @@ open class FetcherViewModel<T : Any>(
                     }
                 }
             } catch (e: Exception) {
-                Timber.e(e, "Error on cache value getting with key=$key")
-                null
+                // cancellation of the request
+                if (e is CancellationException) {
+                    reduce { Response.Cancelled(cacheInfo) }
+                    return@intent
+                } else {
+                    Timber.e(e, "Error on cache value getting with key=$key")
+                    null
+                }
             } finally {
                 cacheRequests.clean(requestId, key)
             }
@@ -130,15 +140,14 @@ open class FetcherViewModel<T : Any>(
             }
         }
 
-        val fetcherInfo = info.copy(origin = ResponseOrigin.Fetcher)
+        val fetcherInfo = responseInfo.copy(origin = ResponseOrigin.Fetcher)
 
         if (!cacheRefreshingStared) {
-            // response with the loading state
-            reduce { Response.Loading(fetcherInfo) }
+            reduce { Response.Loading(fetcherInfo) } // response with the loading state
         }
 
         if (checkIfTheSameRequestIsPending(
-                fetcherRequests, requestId, key, fetcherInfo, true
+                fetcherInfo, fetcherRequests, requestId, key, true
             )
         ) return@intent
 
@@ -155,7 +164,7 @@ open class FetcherViewModel<T : Any>(
         } catch (e: Exception) {
             // cancellation of the request
             if (e is CancellationException) {
-                reduce { state } // response with the current state
+                reduce { Response.Cancelled(fetcherInfo) }
             } else {
                 Timber.e(e, "Error on requesting to fetcher with args=$arguments")
                 // convert the exception to ApiException and handle it by default
@@ -179,7 +188,7 @@ open class FetcherViewModel<T : Any>(
         }
 
         // response with the value
-        responseWithValue(value, fetcherInfo)
+        responseWithValue(fetcherInfo, fetcherRequests, value)
     }
 
     /**
@@ -189,8 +198,8 @@ open class FetcherViewModel<T : Any>(
         withContext(Dispatchers.IO) {
             val key = cacheKeyBuilder.build(arguments)
             cleanCache(key)
-            // for the case if we have a fetcher with an embedded cache
             try {
+                // for the case if we have a fetcher with an embedded cache
                 fetcherService.evict(arguments)
             } catch (e: Exception) {
                 Timber.e(e, "Error on cache cleaning with key=$arguments")
@@ -198,10 +207,11 @@ open class FetcherViewModel<T : Any>(
         }
     }
 
-    private fun responseWithValue(value: T?, responseInfo: ResponseInfo) = intent {
+    private fun responseWithValue(
+        responseInfo: ResponseInfo, pendingRequests: PendingRequests<T>, value: T?
+    ) = intent {
         reduce {
-            // if response is in the ignoring list
-            if (fetcherRequests.isIgnoring(responseInfo.requestId))
+            if (pendingRequests.isIgnored(responseInfo.requestId)) // if response is in the ignored list
                 state // response with the current state
             else
                 Response.Data(responseInfo, value)
@@ -210,23 +220,17 @@ open class FetcherViewModel<T : Any>(
 
     // If the same request was already started - responses with its result
     private suspend fun checkIfTheSameRequestIsPending(
-        pendingRequests: PendingRequests<T>, requestId: Long, cacheKey: Any,
-        responseInfo: ResponseInfo, valueIsNullable: Boolean
+        responseInfo: ResponseInfo, pendingRequests: PendingRequests<T>,
+        requestId: Long, cacheKey: Any, valueIsNullable: Boolean
     ): Boolean {
         return pendingRequests.getAsync(requestId, cacheKey)?.let { deferred ->
             val value = deferred.await()
-            if (valueIsNullable || value != null) {
-                intent {
-                    try {
-                        responseWithValue(value, responseInfo)
-                    } catch (e: Exception) {
-                        reduce { state } // response with the current state
-                    } finally {
-                        pendingRequests.clean(requestId)
-                    }
-                }
+            val result = if (valueIsNullable || value != null) {
+                responseWithValue(responseInfo, pendingRequests, value)
                 true
             } else false
+            pendingRequests.clean(requestId)
+            result
         } ?: false
     }
 
@@ -244,7 +248,7 @@ open class FetcherViewModel<T : Any>(
 
     override fun onCleared() {
         super.onCleared()
-        if (cancelPendingRequestsOnClearedVM) fetcherRequests.cancel()
+        if (cancelPendingRequestsOnClearedVM) cancelPendingRequests()
     }
 
     // Some caches need "warming up" because the first request to cache takes much more time than following
@@ -273,6 +277,7 @@ private class PendingRequests<T : Any> {
     private val pendingRequestsByIds = ConcurrentHashMap<Long, Deferred<T?>>()
     private val pendingRequestsByKeys = ConcurrentHashMap<Any, Deferred<T?>>()
 
+    @Synchronized
     fun cancel() = apply {
         pendingRequestsByIds.values.forEach { it.cancel() }
         pendingRequestsByIds.clear()
@@ -280,28 +285,33 @@ private class PendingRequests<T : Any> {
         ignoringResponsesIds.clear()
     }
 
+    @Synchronized
     fun ignore() = apply {
         pendingRequestsByIds.keys.forEach { ignoringResponsesIds[it] = true }
     }
 
+    @Synchronized
     fun getAsync(requestId: Long, key: Any): Deferred<T?>? {
         return pendingRequestsByKeys[key]?.apply {
             pendingRequestsByIds[requestId] = this
         }
     }
 
+    @Synchronized
     fun setAsync(requestId: Long, key: Any, deferred: Deferred<T?>) {
         pendingRequestsByKeys[key] = deferred
         pendingRequestsByIds[requestId] = deferred
     }
 
     @Suppress("DeferredResultUnused")
+    @Synchronized
     fun clean(requestId: Long, key: Any? = null) {
         pendingRequestsByIds.remove(requestId)
         key?.let { pendingRequestsByKeys.remove(key) }
     }
 
-    fun isIgnoring(requestId: Long): Boolean {
+    @Synchronized
+    fun isIgnored(requestId: Long): Boolean {
         return ignoringResponsesIds.remove(requestId) == true
     }
 }
