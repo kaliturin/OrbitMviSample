@@ -43,6 +43,9 @@ class MainFragment : Fragment(R.layout.fragment_main) {
             is Response.Error -> {
                 Timber.e("Id=$id error on loading from $origin")
             }
+            is Response.Cancelled -> {
+                Timber.e("Id=$id cancelled from $origin")
+            }
             else -> {
             }
         }
