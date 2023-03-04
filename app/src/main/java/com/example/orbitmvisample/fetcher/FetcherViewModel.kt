@@ -1,5 +1,6 @@
 package com.example.orbitmvisample.fetcher
 
+import android.content.Context
 import android.os.Bundle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -81,12 +82,14 @@ open class FetcherViewModel<T : Any>(
     /**
      * Sends request to VM to start for emitting [Response] states
      * @param arguments arguments of [FetcherService]
+     * @param context may be used in error handler component to show some default alerts
      * @param cleanCache if true - then removes a value from the cache before fetching it from [FetcherService]
      * @param refreshCache if true - then after response from cache VM trying to fetch a value from [FetcherService]
      */
     @Synchronized
     fun request(
         arguments: FetcherArguments<T> = FetcherArgumentsDefault(),
+        context: Context? = null,
         cleanCache: Boolean = false,
         refreshCache: Boolean = false
     ) = intent {
@@ -168,7 +171,7 @@ open class FetcherViewModel<T : Any>(
             } else {
                 Timber.e(e, "Error on requesting to fetcher with args=$arguments")
                 // convert the exception to ApiException and handle it by default
-                val appException = errorHandler?.handle(e, errorHandlerSettings)
+                val appException = errorHandler?.handle(e, context, errorHandlerSettings)
                     ?: AppException(cause = e)
                 // then response with the error on data fetching
                 reduce { Response.Error.Exception(appException, fetcherInfo) }

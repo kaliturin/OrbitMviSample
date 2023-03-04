@@ -2,24 +2,28 @@ package com.example.orbitmvisample.apierrorhandler.impl
 
 import android.content.Context
 import android.os.Bundle
-import android.widget.Toast
 import androidx.core.os.bundleOf
 import com.example.orbitmvisample.apierrorhandler.AppErrorCode
 import com.example.orbitmvisample.apierrorhandler.AppErrorHandler
 import com.example.orbitmvisample.apierrorhandler.AppException
 import com.example.orbitmvisample.fetcher.FetcherViewModel
+import com.example.orbitmvisample.ui.alert.AlertData
+import com.example.orbitmvisample.ui.alert.AlertManager
+import timber.log.Timber
 
 /**
  * Propagates specific types of handling exceptions
  */
 class AppErrorHandlerPropagator(
-    private val context: Context,
+    private val alertManager: AlertManager,
     defSettings: Bundle = Bundle()
 ) : AppErrorHandler {
 
     private val settingsHelper = AppErrorHandlerSettingsHelper(defSettings)
 
-    override suspend fun handle(throwable: Throwable, settings: Bundle?): AppException {
+    override suspend fun handle(
+        throwable: Throwable, context: Context?, settings: Bundle?
+    ): AppException {
         settingsHelper.setCurrentSettings(settings)
 
         val exception = throwable as? AppException
@@ -42,12 +46,20 @@ class AppErrorHandlerPropagator(
 
         when (exception.errorCode) {
             AppErrorCode.USER_IS_NOT_AUTHORIZED, AppErrorCode.SESSION_CLOSED -> {
+                // ignore the errors
             }
             else -> {
                 if (!settingsHelper.getBoolean(SUPPRESS_ALERT)) {
-                    //TODO: show alert
-                    // Alert.error().message(exception.message).show()
-                    Toast.makeText(context, exception.message, Toast.LENGTH_LONG).show()
+                    // show alert message with the error message
+                    val alertData = AlertData(
+                        title = "Error", // TODO: strings.xml
+                        message = exception.message,
+                    )
+                    try {
+                        alertManager.showAlert(context, alertData)
+                    } catch (e: Exception) {
+                        Timber.e(e)
+                    }
                 }
             }
         }
