@@ -7,6 +7,8 @@ import com.example.orbitmvisample.R
 import com.example.orbitmvisample.apierrorhandler.AppErrorCode
 import com.example.orbitmvisample.apierrorhandler.AppErrorHandler
 import com.example.orbitmvisample.apierrorhandler.AppException
+import com.example.orbitmvisample.eventbus.Event
+import com.example.orbitmvisample.eventbus.EventBusManager
 import com.example.orbitmvisample.fetcher.FetcherViewModel
 import com.example.orbitmvisample.ui.alert.AlertData
 import com.example.orbitmvisample.ui.alert.AlertManager
@@ -16,6 +18,7 @@ import timber.log.Timber
  * Propagates specific types of handling exceptions
  */
 class AppErrorHandlerPropagator(
+    private val eventBusManager: EventBusManager,
     private val alertManager: AlertManager,
     defSettings: Bundle = Bundle()
 ) : AppErrorHandler {
@@ -36,10 +39,11 @@ class AppErrorHandlerPropagator(
             AppErrorCode.UNKNOWN -> {
                 // TODO: track exception
             }
-            AppErrorCode.USER_IS_NOT_AUTHORIZED,
-            AppErrorCode.SESSION_CLOSED,
+            AppErrorCode.USER_IS_NOT_AUTHORIZED, AppErrorCode.SESSION_CLOSED -> {
+                eventBusManager.post(Event.UserNotAuthorized())
+            }
             AppErrorCode.TECHNICAL_WORKS -> {
-                // TODO: propagate exception
+                eventBusManager.post(Event.TechnicalWorks())
             }
             else -> {
             }
@@ -50,12 +54,12 @@ class AppErrorHandlerPropagator(
                 // ignore the errors
             }
             else -> {
-                if (!settingsHelper.getBoolean(SUPPRESS_ALERT)) {
+                if (context != null && !settingsHelper.getBoolean(SUPPRESS_ALERT)) {
                     try {
                         // show the alert with the error message
                         alertManager.showAlert(
                             context, AlertData(
-                                title = context?.getString(R.string.error_title),
+                                title = context.getString(R.string.error_title),
                                 message = exception.message,
                             )
                         )
