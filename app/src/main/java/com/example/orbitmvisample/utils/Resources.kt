@@ -12,6 +12,19 @@ object Resources {
      * @JvmStatic annotation is needed for usage the methods in DataBinding's layouts
      */
 
+    val resources: android.content.res.Resources
+        get() = AppContext.resources
+
+    @JvmStatic
+    fun getString(@StringRes stringRes: Int) = AppContext.getString(stringRes)
+
+    @JvmStatic
+    fun getString(@StringRes stringRes: Int, vararg formatArgs: Any?) =
+        AppContext.resources.getString(stringRes, formatArgs)
+
+    @JvmStatic
+    fun getText(@StringRes textRes: Int) = AppContext.getText(textRes)
+
     @JvmStatic
     @JvmOverloads
     fun getColorR(@ColorRes colorRes: Int, defColor: Int = 0) =
