@@ -11,6 +11,7 @@ import com.example.orbitmvisample.cache.CacheManager
 import com.example.orbitmvisample.cache.impl.CACHE_10_SEC
 import com.example.orbitmvisample.cache.impl.CACHE_15_SEC
 import com.example.orbitmvisample.cache.impl.defaultListOfCacheSettings
+import com.example.orbitmvisample.eventbus.EventBusManager
 import com.example.orbitmvisample.experimental.MultiIntFetcherService
 import com.example.orbitmvisample.fetcher.FetcherViewModel
 import com.example.orbitmvisample.fetcher.withLayerCache
@@ -57,10 +58,12 @@ object MviKoinModule {
 
         single { AlertManager(alertBuilder = DialogAlertBuilder()) }
 
+        single { EventBusManager() }
+
         // Error handler
         single<AppExceptionBuilder> { AppExceptionBuilderImpl(androidContext().resources) }
         single<AppErrorHandler> {
-            AppErrorHandlerDispatcher(get(), AppErrorHandlerPropagator(get()))
+            AppErrorHandlerDispatcher(get(), AppErrorHandlerPropagator(get(), get()))
         }
 
         // Services impl

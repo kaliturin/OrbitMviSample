@@ -19,7 +19,7 @@ class CacheManager(
     @PublishedApi
     internal val settingsMap = ConcurrentHashMap<String, CacheSettings>()
 
-    @Suppress("UNCHECKED_CAST")
+    @Suppress("unchecked_cast")
     @PublishedApi
     internal inline fun <K : Any, reified V : Any> getInternal(cacheName: String = DEFAULT_CACHE_NAME): Cache<K, V>? {
         return try {

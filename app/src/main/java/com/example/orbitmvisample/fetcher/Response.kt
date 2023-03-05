@@ -129,7 +129,7 @@ data class ResponseInfo(
     val requestId: Long = 0,
     val arguments: FetcherArguments<*>? = null
 ) {
-    @Suppress("UNCHECKED_CAST")
+    @Suppress("unchecked_cast")
     fun <T> getArguments(): T? {
         return arguments as? T
     }

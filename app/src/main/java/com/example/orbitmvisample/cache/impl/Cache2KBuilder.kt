@@ -23,7 +23,7 @@ class Cache2KBuilder : CacheBuilder {
         if (settings.capacity != 0) {
             builder.entryCapacity(settings.capacity.toLong())
         }
-        @Suppress("UNCHECKED_CAST")
+        @Suppress("unchecked_cast")
         return (builder.build() as? org.cache2k.Cache<K, V>)?.let {
             Cache.fromCache2k(it).reuseInflight()
         }
