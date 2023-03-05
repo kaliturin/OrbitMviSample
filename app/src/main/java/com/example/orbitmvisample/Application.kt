@@ -30,9 +30,6 @@ class Application : MultiDexApplication() {
     companion object {
         lateinit var appContext: Application
             private set
-
-        @JvmStatic
-        fun appContext(): Context = appContext
     }
 }
 
