@@ -15,13 +15,13 @@ import org.orbitmvi.orbit.syntax.simple.intent
 import org.orbitmvi.orbit.syntax.simple.reduce
 import org.orbitmvi.orbit.viewmodel.container
 import timber.log.Timber
-import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 
 /**
  * VM with data fetching service and optional cache service
  */
+@Suppress("unused")
 open class FetcherViewModel<T : Any>(
     private val fetcherService: FetcherService<T>,
     private val errorHandler: AppErrorHandler? = null,
@@ -68,6 +68,7 @@ open class FetcherViewModel<T : Any>(
      * @param value If false and in case of using data class of [FetcherArguments] implementation, then the VM
      * won't respond with the same states as it is conventional for [kotlinx.coroutines.flow.StateFlow]
      */
+    @SuppressWarnings("WeakerAccess")
     fun withRequestId(value: Boolean = true) = apply { withRequestId.set(value) }
 
     /**
@@ -197,6 +198,7 @@ open class FetcherViewModel<T : Any>(
     /**
      * Cleans the cache of the VM by the key built from the passed args
      */
+    @SuppressWarnings("WeakerAccess")
     suspend fun cleanCache(arguments: FetcherArguments<T>) {
         withContext(Dispatchers.IO) {
             val key = cacheKeyBuilder.build(arguments)
@@ -276,21 +278,21 @@ open class FetcherViewModel<T : Any>(
  * Pending requests container
  */
 private class PendingRequests<T : Any> {
-    private val ignoringResponsesIds = ConcurrentHashMap<Long, Boolean>()
-    private val pendingRequestsByIds = ConcurrentHashMap<Long, Deferred<T?>>()
-    private val pendingRequestsByKeys = ConcurrentHashMap<Any, Deferred<T?>>()
+    private val ignoredResponsesIds = mutableMapOf<Long, Boolean>()
+    private val pendingRequestsByIds = mutableMapOf<Long, Deferred<T?>>()
+    private val pendingRequestsByKeys = mutableMapOf<Any, Deferred<T?>>()
 
     @Synchronized
     fun cancel() = apply {
         pendingRequestsByIds.values.forEach { it.cancel() }
         pendingRequestsByIds.clear()
         pendingRequestsByKeys.clear()
-        ignoringResponsesIds.clear()
+        ignoredResponsesIds.clear()
     }
 
     @Synchronized
     fun ignore() = apply {
-        pendingRequestsByIds.keys.forEach { ignoringResponsesIds[it] = true }
+        pendingRequestsByIds.keys.forEach { ignoredResponsesIds[it] = true }
     }
 
     @Synchronized
@@ -315,6 +317,6 @@ private class PendingRequests<T : Any> {
 
     @Synchronized
     fun isIgnored(requestId: Long): Boolean {
-        return ignoringResponsesIds.remove(requestId) == true
+        return ignoredResponsesIds.remove(requestId) == true
     }
 }
