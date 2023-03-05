@@ -5,7 +5,7 @@ import androidx.annotation.DimenRes
 import com.example.orbitmvisample.AppContext
 
 @Suppress("unused")
-object AppDimens {
+object Dimens {
     /**
      * @JvmStatic annotation is needed for usage the methods in DataBinding's layouts
      */

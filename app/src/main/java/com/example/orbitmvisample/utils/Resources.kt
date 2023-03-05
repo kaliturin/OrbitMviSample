@@ -7,7 +7,7 @@ import androidx.lifecycle.LifecycleOwner
 import com.example.orbitmvisample.AppContext
 
 @Suppress("unused")
-object AppResources {
+object Resources {
     /**
      * @JvmStatic annotation is needed for usage the methods in DataBinding's layouts
      */
