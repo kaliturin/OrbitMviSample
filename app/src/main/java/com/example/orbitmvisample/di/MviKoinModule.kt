@@ -1,6 +1,5 @@
 package com.example.orbitmvisample.di
 
-import android.app.Application
 import com.example.orbitmvisample.apierrorhandler.AppErrorHandler
 import com.example.orbitmvisample.apierrorhandler.AppExceptionBuilder
 import com.example.orbitmvisample.apierrorhandler.impl.AppErrorHandlerDispatcher
@@ -19,26 +18,14 @@ import com.example.orbitmvisample.service.IntFetcherService
 import com.example.orbitmvisample.ui.alert.AlertManager
 import com.example.orbitmvisample.ui.alert.impl.DialogAlertBuilder
 import org.koin.android.ext.koin.androidContext
-import org.koin.android.ext.koin.androidLogger
 import org.koin.androidx.viewmodel.dsl.viewModel
-import org.koin.core.context.startKoin
-import org.koin.core.logger.Level
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
 typealias IntViewModel = FetcherViewModel<Int>
 
 object MviKoinModule {
-
-    fun startKoin(application: Application) {
-        startKoin {
-            androidLogger(Level.DEBUG)
-            androidContext(application)
-            modules(listOf(module()))
-        }
-    }
-
-    private fun module() = module {
+    fun module() = module {
 
         single { CacheBuilderProvider(androidContext()) }
 
