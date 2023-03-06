@@ -27,10 +27,10 @@ class PreferencesCacheBuilder(
             ?.asStringCache()
             ?.encrypt(context)
 
-        return if (settings.timeToExpire >= 0L)
-            cache?.asTimedJsonCache(settings)
-        else
+        return if (settings.eternal || settings.timeToExpire <= 0L)
             cache?.asJsonCache(clazz)
+        else
+            cache?.asTimedJsonCache(settings)
     }
 
     private fun getDataStore(cacheName: String): DataStore<Preferences>? {

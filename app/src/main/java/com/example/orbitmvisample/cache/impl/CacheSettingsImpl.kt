@@ -22,18 +22,15 @@ const val PREFS_ETERNAL = "PREFS_ETERNAL"
  */
 val defaultListOfCacheSettings = listOf(
     CacheSettings(
-        cacheName = CACHE_DEFAULT,
-        capacity = 1000,
-        eternal = true,
-        cacheType = CacheType.CACHE2K
+        cacheName = CACHE_DEFAULT, capacity = 1000, eternal = true, cacheType = CacheType.CACHE2K
     ),
     CacheSettings(cacheName = CACHE_3_SEC, capacity = 50, timeToExpire = 3),
-    CacheSettings(cacheName = CACHE_10_SEC, capacity = 50, timeToExpire = 10),
     CacheSettings(
-        cacheName = CACHE_15_SEC,
-        capacity = 100,
-        timeToExpire = 15,
-        cacheType = CacheType.PREFERENCES
+        cacheName = CACHE_10_SEC, capacity = 100, timeToExpire = 10, cacheType = CacheType.LRU
+    ),
+    CacheSettings(
+        cacheName = CACHE_15_SEC, size = 1024 * 100, timeToExpire = 15,
+        cacheType = CacheType.DISK_LRU
     ),
     CacheSettings(cacheName = CACHE_30_SEC, capacity = 100, timeToExpire = 30),
     CacheSettings(cacheName = CACHE_1_MIN, capacity = 200, timeToExpire = 60),

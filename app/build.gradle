@@ -102,4 +102,6 @@ dependencies {
     def eventbus_version = '3.3.1'
     implementation "org.greenrobot:eventbus:$eventbus_version"
     kapt "org.greenrobot:eventbus-annotation-processor:$eventbus_version"
+
+    implementation "com.jakewharton:disklrucache:2.0.2"
 }
