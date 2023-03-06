@@ -262,7 +262,7 @@ open class FetcherViewModel<T : Any>(
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
                 try {
-                    cacheService.get(0)
+                    cacheService.get("")
                 } catch (_: Exception) {
                 }
             }

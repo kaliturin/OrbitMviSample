@@ -2,6 +2,7 @@ package com.example.orbitmvisample.cache
 
 import android.content.Context
 import com.example.orbitmvisample.cache.impl.Cache2KBuilder
+import com.example.orbitmvisample.cache.impl.DiskLruCacheBuilder
 import com.example.orbitmvisample.cache.impl.LruCacheBuilder
 import com.example.orbitmvisample.cache.impl.PreferencesCacheBuilder
 import java.util.concurrent.ConcurrentHashMap
@@ -22,6 +23,7 @@ class CacheBuilderProvider(private val context: Context) {
         return when (cacheType) {
             CacheType.LRU -> LruCacheBuilder()
             CacheType.CACHE2K -> Cache2KBuilder()
+            CacheType.DISK_LRU -> DiskLruCacheBuilder(context)
             CacheType.PREFERENCES -> PreferencesCacheBuilder(context)
         }
     }

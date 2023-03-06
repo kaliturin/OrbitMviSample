@@ -24,7 +24,7 @@ internal class JsonCache<K : Any, V : Any>(
 ) : Cache<K, V> {
 
     override suspend fun evict(key: K) {
-        withContext(Dispatchers.Default) {
+        withContext(Dispatchers.IO) {
             toJsonSafe(key)?.let { keyJson ->
                 cache.evict(keyJson)
             }
@@ -36,7 +36,7 @@ internal class JsonCache<K : Any, V : Any>(
     }
 
     override suspend fun get(key: K): V? {
-        return withContext(Dispatchers.Default) {
+        return withContext(Dispatchers.IO) {
             toJsonSafe(key)?.let { keyJson ->
                 val valueJson = cache.get(keyJson)
                 fromJsonSafe(valueJson, clazz)
@@ -45,7 +45,7 @@ internal class JsonCache<K : Any, V : Any>(
     }
 
     override suspend fun set(key: K, value: V) {
-        withContext(Dispatchers.Default) {
+        withContext(Dispatchers.IO) {
             toJsonSafe(key)?.let { keyJson ->
                 toJsonSafe(value)?.let { valueJson ->
                     cache.set(keyJson, valueJson)
