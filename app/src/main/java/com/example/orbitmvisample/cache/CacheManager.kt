@@ -17,21 +17,23 @@ class CacheManager(
     internal val cachesMap = ConcurrentHashMap<String, Cache<*, *>>()
 
     @PublishedApi
-    internal val settingsMap = ConcurrentHashMap<String, CacheSettings>()
+    internal val settingsMap = mutableMapOf<String, CacheSettings>()
 
     @Suppress("unchecked_cast")
     @PublishedApi
     internal inline fun <K : Any, reified V : Any> getInternal(cacheName: String = DEFAULT_CACHE_NAME): Cache<K, V>? {
-        return try {
-            (cachesMap[cacheName] ?: run {
-                val settings = settingsMap[cacheName] ?: defSettings.first()
-                val builder = cacheBuilder ?: cacheBuilderProvider?.get(settings)
-                ?: throw IllegalArgumentException("No CacheBuilder is provided")
-                builder.build<K, V>(settings, V::class)?.also { cachesMap[cacheName] = it }
-            }) as? Cache<K, V>
-        } catch (e: Exception) {
-            Timber.e(e)
-            null
+        synchronized(this) {
+            return try {
+                (cachesMap[cacheName] ?: run {
+                    val settings = settingsMap[cacheName] ?: defSettings.first()
+                    val builder = cacheBuilder ?: cacheBuilderProvider?.get(settings)
+                    ?: throw IllegalArgumentException("No CacheBuilder is provided")
+                    builder.build<K, V>(settings, V::class)?.also { cachesMap[cacheName] = it }
+                }) as? Cache<K, V>
+            } catch (e: Exception) {
+                Timber.e(e)
+                null
+            }
         }
     }
 
