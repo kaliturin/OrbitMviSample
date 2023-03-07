@@ -15,7 +15,7 @@ import kotlin.reflect.KClass
 
 /**
  * Builds [com.appmattus.layercache.Cache] cache that is wrapping
- * [androidx.datastore.core.DataStore]<Preferences> cache
+ * [androidx.datastore.core.DataStore]<Preferences>
  */
 class PreferencesCacheBuilder(
     private val context: Context

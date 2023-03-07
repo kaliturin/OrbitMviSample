@@ -3,8 +3,10 @@ package com.example.orbitmvisample.cache.impl
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.*
 import com.appmattus.layercache.Cache
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.withContext
 import timber.log.Timber
 
 fun DataStore<Preferences>.asStringCache(): Cache<String, String> =
@@ -37,35 +39,43 @@ private class DataStoreCache<T : Any>(
 ) : Cache<String, T> {
 
     override suspend fun get(key: String): T? {
-        return try {
-            store.data.map { it[getKey(key)] }.first()
-        } catch (e: Exception) {
-            Timber.e(e)
-            null
+        return withContext(Dispatchers.IO) {
+            try {
+                store.data.map { it[getKey(key)] }.first()
+            } catch (e: Exception) {
+                Timber.e(e)
+                null
+            }
         }
     }
 
     override suspend fun set(key: String, value: T) {
-        try {
-            store.edit { it[getKey(key)] = value }
-        } catch (e: Exception) {
-            Timber.e(e)
+        return withContext(Dispatchers.IO) {
+            try {
+                store.edit { it[getKey(key)] = value }
+            } catch (e: Exception) {
+                Timber.e(e)
+            }
         }
     }
 
     override suspend fun evict(key: String) {
-        try {
-            store.edit { it.remove(getKey(key)) }
-        } catch (e: Exception) {
-            Timber.e(e)
+        return withContext(Dispatchers.IO) {
+            try {
+                store.edit { it.remove(getKey(key)) }
+            } catch (e: Exception) {
+                Timber.e(e)
+            }
         }
     }
 
     override suspend fun evictAll() {
-        try {
-            store.edit { it.clear() }
-        } catch (e: Exception) {
-            Timber.e(e)
+        return withContext(Dispatchers.IO) {
+            try {
+                store.edit { it.clear() }
+            } catch (e: Exception) {
+                Timber.e(e)
+            }
         }
     }
 }

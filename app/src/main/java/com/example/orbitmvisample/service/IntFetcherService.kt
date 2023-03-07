@@ -12,7 +12,6 @@ import kotlin.random.Random
 class IntFetcherService : FetcherService<Int> {
     override suspend fun request(arguments: FetcherArguments<Int>): Int {
         val args = arguments as? Arguments ?: Arguments()
-        Timber.d("request data called in thread: " + Thread.currentThread().toString())
         return coroutineScope {
             val asyncResult = async(Dispatchers.IO) {
                 Timber.d("fetching data in thread: " + Thread.currentThread().toString())
