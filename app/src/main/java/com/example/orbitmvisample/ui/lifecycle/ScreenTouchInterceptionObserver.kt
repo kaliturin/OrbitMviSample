@@ -8,7 +8,7 @@ import android.view.WindowManager
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 
-class ScreenTouchInterceptionLifecycle(
+class ScreenTouchInterceptionObserver(
     private val context: Context,
     private val onTouchListener: View.OnTouchListener
 ) : DefaultLifecycleObserver {

@@ -24,7 +24,7 @@ import org.koin.dsl.module
 
 typealias IntViewModel = FetcherViewModel<Int>
 
-object MviKoinModule {
+object KoinModule {
     fun module() = module {
 
         single { CacheBuilderProvider(androidContext()) }
