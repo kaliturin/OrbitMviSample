@@ -22,6 +22,11 @@ interface Alert {
     fun hide(): Boolean = false
 
     /**
+     * @return true if alert is showing
+     */
+    fun isShowing(): Boolean = false
+
+    /**
      * Adds alert's listener
      * @return true if the alert supports listeners
      */

@@ -43,7 +43,7 @@ object KoinModule {
             memoryCache!! + persistCache!!
         }
 
-        single { AlertManager(alertBuilder = DialogAlertBuilder()) }
+        single { AlertManager(defAlertBuilder = DialogAlertBuilder()) }
 
         single { EventBusManager() }
 
