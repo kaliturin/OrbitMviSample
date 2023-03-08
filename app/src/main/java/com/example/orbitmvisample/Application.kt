@@ -2,7 +2,7 @@ package com.example.orbitmvisample
 
 import android.content.Context
 import androidx.multidex.MultiDexApplication
-import com.example.orbitmvisample.di.MviKoinModule
+import com.example.orbitmvisample.di.KoinModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.core.context.startKoin
@@ -19,7 +19,7 @@ class Application : MultiDexApplication() {
         startKoin {
             androidLogger(Level.DEBUG)
             androidContext(this@Application)
-            modules(listOf(MviKoinModule.module()))
+            modules(listOf(KoinModule.module()))
         }
     }
 
