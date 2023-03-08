@@ -26,7 +26,13 @@ class AppErrorHandlerDispatcher(
             builder.build(throwable)
         }
         Timber.e(exception.toString())
-        handlers.forEach { it.handle(exception, context, settings) }
+        handlers.forEach {
+            try {
+                it.handle(exception, context, settings)
+            } catch (e: Exception) {
+                Timber.e(e)
+            }
+        }
         return exception
     }
 }

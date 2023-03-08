@@ -61,6 +61,8 @@ class AppErrorHandlerPropagator(
                             context, AlertData(
                                 title = context.getString(R.string.error_title),
                                 message = exception.message,
+                                // this means that we don't want to open the same alert more than ones in the period
+                                repeatingMills = ALERT_REPEATING_MILLS
                             )
                         )
                     } catch (e: Exception) {
@@ -74,6 +76,7 @@ class AppErrorHandlerPropagator(
 
     companion object {
         private const val SUPPRESS_ALERT = "AppErrorHandlerPropagator.SUPPRESS_ALERT"
+        private const val ALERT_REPEATING_MILLS = 1000L
 
         fun settings(suppressAlert: Boolean) = bundleOf(
             SUPPRESS_ALERT to suppressAlert

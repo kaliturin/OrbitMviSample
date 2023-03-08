@@ -14,6 +14,9 @@ class ToastAlert(
 ) : Alert {
     override val id = alertData.id
     private var alertListener: AlertListener? = null
+    private var isAlertShowing: Boolean = false
+
+    override fun isShowing(): Boolean = isAlertShowing
 
     /**
      * Since SDK 30
@@ -38,10 +41,12 @@ class ToastAlert(
             toast.addCallback(object : Toast.Callback() {
                 override fun onToastShown() {
                     alertListener?.onOpen(this@ToastAlert)
+                    isAlertShowing = true
                 }
 
                 override fun onToastHidden() {
                     alertListener?.onClose(this@ToastAlert)
+                    isAlertShowing = false
                 }
             })
         }

@@ -6,6 +6,7 @@ import android.view.KeyEvent
 import android.widget.TextView
 import androidx.annotation.MainThread
 import androidx.appcompat.app.AlertDialog
+import com.example.orbitmvisample.R
 import com.example.orbitmvisample.ui.alert.Alert
 import com.example.orbitmvisample.ui.alert.AlertData
 import com.example.orbitmvisample.ui.alert.AlertListener
@@ -36,6 +37,10 @@ class DialogAlert(
         } ?: false
     }
 
+    override fun isShowing(): Boolean {
+        return alertDialog?.isShowing == true
+    }
+
     override fun alertListener(alertListener: AlertListener?): Boolean {
         this.alertListener = alertListener
         return true
@@ -60,15 +65,22 @@ class DialogAlert(
                     alertData.onClose?.invoke()
                 }
 
-            // TODO: strings.xml
-            builder.setPositiveButton(positive ?: "Ok") { _, _ -> onPositive?.invoke() }
+            builder.setPositiveButton(
+                positive ?: context.getString(R.string.ok)
+            ) { _, _ -> onPositive?.invoke() }
 
             onNegative?.run {
-                builder.setNegativeButton(negative ?: "Cancel") { _, _ -> invoke() }
+                builder.setNegativeButton(
+                    negative ?: context.getString(R.string.cancel)
+                ) { _, _ -> invoke() }
             }
+
             onNeutral?.run {
-                builder.setNeutralButton(neutral ?: "Later") { _, _ -> invoke() }
+                builder.setNeutralButton(
+                    neutral ?: context.getString(R.string.later)
+                ) { _, _ -> invoke() }
             }
+
             contentView?.let {
                 builder.setView(it)
             }
