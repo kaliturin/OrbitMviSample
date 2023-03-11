@@ -53,8 +53,8 @@ class DialogAlert(
             val builder = dlgData?.themeResId?.let {
                 AlertDialog.Builder(context, it)
             } ?: AlertDialog.Builder(context)
-                .setTitle(title)
-                .setMessage(message)
+                .setTitle(getTitle())
+                .setMessage(getMessage())
                 .setCancelable(cancellable)
                 .setOnKeyListener { dlg, keyCode, _ ->
                     if (keyCode == KeyEvent.KEYCODE_BACK) dlg.dismiss()
@@ -90,7 +90,7 @@ class DialogAlert(
     }
 
     private fun onOpen(alertData: AlertData) {
-        if (alertData.linkColor != null && alertData.message != null) {
+        if (alertData.linkColor != null && alertData.getMessage() != null) {
             alertDialog?.findViewById<TextView>(android.R.id.message)?.apply {
                 setLinkTextColor(alertData.linkColor)
                 movementMethod = LinkMovementMethod.getInstance()

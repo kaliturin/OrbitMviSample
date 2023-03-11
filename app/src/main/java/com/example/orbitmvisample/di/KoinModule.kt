@@ -19,6 +19,7 @@ import com.example.orbitmvisample.fetcher.withLayerCache
 import com.example.orbitmvisample.service.IntFetcherService
 import com.example.orbitmvisample.ui.alert.AlertManager
 import com.example.orbitmvisample.ui.alert.impl.DialogAlertBuilder
+import com.example.orbitmvisample.utils.NetworkAccessibilityObserver
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.core.qualifier.named
@@ -45,7 +46,12 @@ object KoinModule {
             memoryCache!! + persistCache!!
         }
 
-        single { AlertManager(defAlertBuilder = DialogAlertBuilder()) }
+        single {
+            AlertManager(
+                context = androidContext(),
+                defAlertBuilder = DialogAlertBuilder()
+            )
+        }
 
         single {
             EventTimeoutManager()
@@ -54,6 +60,8 @@ object KoinModule {
         }
 
         single { EventBusManager(get()) }
+
+        single { NetworkAccessibilityObserver(get()) }
 
         // Error handler
         single<AppExceptionBuilder> { AppExceptionBuilderImpl(androidContext().resources) }

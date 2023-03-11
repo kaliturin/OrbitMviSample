@@ -4,6 +4,8 @@
     <string name="ok">OK</string>
     <string name="cancel">Cancel</string>
     <string name="later">Later</string>
+    <string name="internet_is_available">Internet is available</string>
+    <string name="internet_is_unavailable">Internet is unavailable</string>
 
     <string name="error_response_format">error_response_format</string>
     <string name="error_service_unavailable">error_service_unavailable</string>

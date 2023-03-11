@@ -34,7 +34,7 @@ class ToastAlert(
             Toast.LENGTH_LONG
         else
             Toast.LENGTH_SHORT
-        val toast = Toast.makeText(context, alertData.message, duration)
+        val toast = Toast.makeText(context, alertData.getMessage(), duration)
         toast.show()
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {

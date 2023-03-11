@@ -1,5 +1,6 @@
 package com.example.orbitmvisample.ui.alert
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
@@ -8,7 +9,9 @@ import androidx.collection.LruCache
 import androidx.core.os.postDelayed
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.Lifecycle
+import com.example.orbitmvisample.AppContext
 import com.example.orbitmvisample.ui.alert.impl.ToastAlertBuilder
+import timber.log.Timber
 import java.lang.ref.WeakReference
 
 /**
@@ -55,7 +58,7 @@ class AlertManager(
             countDownTimeToHideAlert(data.durationMills, alert)
 
         // show the alert in main thread
-        runOnUiThread { alert.show() }
+        runOnUiThread { safeCall { alert.show() } }
     }
 
     private val alertListener = object : AlertListener {
@@ -73,12 +76,7 @@ class AlertManager(
         timerHandler.postDelayed(durationMills, alert.id) {
             timedAlertsContainer.clean(alert.id)
             // hide the alert in main thread
-            runOnUiThread {
-                try {
-                    alert.hide()
-                } catch (_: Exception) {
-                }
-            }
+            runOnUiThread { safeCall { alert.hide() } }
         }
     }
 
@@ -87,6 +85,19 @@ class AlertManager(
             callback()
         else
             timerHandler.post(callback)
+    }
+
+    private fun safeCall(callback: () -> Unit) {
+        try {
+            callback()
+        } catch (e: Exception) {
+            Timber.e(e)
+        }
+    }
+
+    companion object {
+        @SuppressLint("StaticFieldLeak")
+        val instance = AlertManager(context = AppContext)
     }
 }
 
