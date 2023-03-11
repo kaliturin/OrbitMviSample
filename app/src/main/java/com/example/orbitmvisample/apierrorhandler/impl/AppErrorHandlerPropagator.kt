@@ -40,10 +40,10 @@ class AppErrorHandlerPropagator(
                 // TODO: track exception
             }
             AppErrorCode.USER_IS_NOT_AUTHORIZED, AppErrorCode.SESSION_CLOSED -> {
-                eventBusManager.post(Event.UserNotAuthorized())
+                eventBusManager.post(Event.UserNotAuthorized(), true)
             }
             AppErrorCode.TECHNICAL_WORKS -> {
-                eventBusManager.post(Event.TechnicalWorks())
+                eventBusManager.post(Event.TechnicalWorks(), true)
             }
             else -> {
             }
