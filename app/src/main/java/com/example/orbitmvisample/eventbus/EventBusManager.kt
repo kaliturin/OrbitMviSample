@@ -6,7 +6,7 @@ import org.greenrobot.eventbus.Subscribe
 import kotlin.reflect.KClass
 
 @Suppress("unused", "unused_parameter")
-class EventBusManager {
+class EventBusManager(private val debounceManager: EventTimeoutManager) {
 
     private val eventBus = EventBus.builder()
         .addIndex(MyEventBusIndex())
@@ -26,7 +26,8 @@ class EventBusManager {
         }
     }
 
-    fun post(event: Any) {
+    fun post(event: Any, withDebounce: Boolean = false) {
+        if (withDebounce && debounceManager.isTimeout(event)) return
         eventBus.post(event)
     }
 

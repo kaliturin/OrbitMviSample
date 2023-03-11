@@ -10,7 +10,9 @@ import com.example.orbitmvisample.cache.CacheManager
 import com.example.orbitmvisample.cache.impl.CACHE_10_SEC
 import com.example.orbitmvisample.cache.impl.CACHE_15_SEC
 import com.example.orbitmvisample.cache.impl.defaultListOfCacheSettings
+import com.example.orbitmvisample.eventbus.Event
 import com.example.orbitmvisample.eventbus.EventBusManager
+import com.example.orbitmvisample.eventbus.EventTimeoutManager
 import com.example.orbitmvisample.experimental.MultiIntFetcherService
 import com.example.orbitmvisample.fetcher.FetcherViewModel
 import com.example.orbitmvisample.fetcher.withLayerCache
@@ -45,7 +47,13 @@ object KoinModule {
 
         single { AlertManager(defAlertBuilder = DialogAlertBuilder()) }
 
-        single { EventBusManager() }
+        single {
+            EventTimeoutManager()
+                .register<Event.TechnicalWorks>()
+                .register<Event.UserNotAuthorized>()
+        }
+
+        single { EventBusManager(get()) }
 
         // Error handler
         single<AppExceptionBuilder> { AppExceptionBuilderImpl(androidContext().resources) }
