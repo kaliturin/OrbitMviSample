@@ -50,41 +50,7 @@ class NetworkAccessibilityObserver(
         isRegistered = false
     }
 
-    private fun onNetworkStatusChange(network: Network, event: Event.NetworkStatusChanged) {
-        debounceHandler.removeCallbacksAndMessages(null)
-        val delay = if (event.isAvailable) STATUS_CHANGE_DELAY else 0
-        debounceHandler.postDelayed(delay) {
-            if (event.isAvailable)
-                Timber.d("Network %s connection is available", network)
-            else
-                Timber.d("Network %s connection is lost", network)
-            onNetworkStatusChangedInternal(event)
-        }
-    }
-
-    private val networkCallback = object : ConnectivityManager.NetworkCallback() {
-        override fun onAvailable(network: Network) {
-            onNetworkStatusChange(network, Event.NetworkStatusChanged(true))
-        }
-
-        override fun onLost(network: Network) {
-            onNetworkStatusChange(network, Event.NetworkStatusChanged(false))
-        }
-    }
-
-    @Suppress("DEPRECATION")
-    private fun isNetworkAvailable2(): Boolean {
-        return if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
-            service?.activeNetworkInfo?.isConnected ?: false
-        } else {
-            service?.activeNetwork?.let { network ->
-                service.getNetworkCapabilities(network)
-                    ?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-            } ?: false
-        }
-    }
-
-    private fun onNetworkStatusChangedInternal(event: Event.NetworkStatusChanged) {
+    private fun onNetworkStatusChanged(event: Event.NetworkStatusChanged) {
         if (isNetworkAvailable != event.isAvailable) {
             alertManager?.showAlert(
                 AlertData(
@@ -97,8 +63,42 @@ class NetworkAccessibilityObserver(
         eventBusManager.post(event)
     }
 
+    private fun onNetworkStatusChangeDebounce(network: Network, event: Event.NetworkStatusChanged) {
+        debounceHandler.removeCallbacksAndMessages(null)
+        val delay = if (event.isAvailable) STATUS_CHANGE_DELAY else 0
+        debounceHandler.postDelayed(delay) {
+            if (event.isAvailable)
+                Timber.d("Network %s connection is available", network)
+            else
+                Timber.d("Network %s connection is lost", network)
+            onNetworkStatusChanged(event)
+        }
+    }
+
+    private fun isNetworkAvailable(): Boolean {
+        return if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
+            @Suppress("DEPRECATION")
+            service?.activeNetworkInfo?.isConnected ?: false
+        } else {
+            service?.activeNetwork?.let { network ->
+                service.getNetworkCapabilities(network)
+                    ?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+            } ?: false
+        }
+    }
+
+    private val networkCallback = object : ConnectivityManager.NetworkCallback() {
+        override fun onAvailable(network: Network) {
+            onNetworkStatusChangeDebounce(network, Event.NetworkStatusChanged(true))
+        }
+
+        override fun onLost(network: Network) {
+            onNetworkStatusChangeDebounce(network, Event.NetworkStatusChanged(false))
+        }
+    }
+
     init {
-        isNetworkAvailable = isNetworkAvailable2()
+        isNetworkAvailable = isNetworkAvailable()
     }
 
     companion object {
