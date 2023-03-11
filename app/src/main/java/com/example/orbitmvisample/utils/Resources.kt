@@ -15,8 +15,12 @@ object Resources {
     val resources: android.content.res.Resources
         get() = AppContext.resources
 
+    val isNetworkAvailable: Boolean
+        get() = NetworkAccessibilityObserver.isNetworkAvailable
+
     @JvmStatic
-    fun getString(@StringRes stringRes: Int) = AppContext.getString(stringRes)
+    fun getString(@StringRes stringRes: Int?): String? =
+        if (stringRes != null) AppContext.getString(stringRes) else null
 
     @JvmStatic
     fun getString(@StringRes stringRes: Int, vararg formatArgs: Any?) =
