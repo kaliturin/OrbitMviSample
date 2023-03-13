@@ -27,7 +27,8 @@ data class AlertData(
     val contentView: View? = null,          // alert content view
     val showOnlyIfParentIsResumed: Boolean = true,    // show an alert only if it's parent is resumed
     val alertBuilder: AlertBuilder? = null, // alert builder
-    val additionalSettings: Any? = null     // additional alert settings
+    val alertStyle: AlertStyle? = null,     // alert style type
+    val specificSettings: Any? = null       // alert specific settings
 ) {
     fun getMessage() = message ?: Resources.getString(messageRes)
     fun getTitle() = title ?: Resources.getString(titleRes)
@@ -43,4 +44,12 @@ data class AlertData(
         private val message: String? = null,
         private val title: String? = null
     )
+
+    @Suppress("unused")
+    enum class AlertStyle {
+        ERROR,
+        WARN,
+        QUEST,
+        INFO
+    }
 }

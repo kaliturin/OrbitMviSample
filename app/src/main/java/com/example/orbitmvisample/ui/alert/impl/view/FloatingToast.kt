@@ -13,6 +13,7 @@ import android.widget.TextView
 import androidx.core.view.isInvisible
 import androidx.core.view.isVisible
 import com.example.orbitmvisample.R
+import com.example.orbitmvisample.ui.alert.AlertData.AlertStyle
 import com.example.orbitmvisample.utils.Dimens
 import com.example.orbitmvisample.utils.Dimens.dpToPx
 import com.example.orbitmvisample.utils.Dimens.dpToPxI
@@ -23,13 +24,18 @@ import com.example.orbitmvisample.utils.Resources.getColorR
  */
 class FloatingToast(
     private val parent: ViewGroup,
-    private var settings: Settings = Settings()
+    private val alertStyle: AlertStyle? = null,  // if not null - affects the use of predefined colors
+    private val settings: Settings = Settings()
 ) {
+    constructor(
+        parent: View,
+        alertStyle: AlertStyle? = null,
+        settings: Settings = Settings(),
+    ) : this(parent as ViewGroup, alertStyle, settings)
+
     private var layout: ViewGroup? = null
     private var view: View? = null
     private var translation: Float = 0f
-
-    constructor(parent: View, settings: Settings = Settings()) : this(parent as ViewGroup, settings)
 
     fun show(message: CharSequence?, onComplete: (() -> Unit)? = null) {
         if (view != null) return
@@ -96,7 +102,7 @@ class FloatingToast(
                 text = message
                 setTextSize(TypedValue.COMPLEX_UNIT_PX, settings.textSize)
                 setTextColor(settings.textColor)
-                background = buildBgShape(settings.radii, settings.bgColor)
+                background = buildBgShape(settings.radii, getBgColor())
                 gravity = settings.textGravity
                 val p = settings.contentPadding
                 setPadding(p, p, p, p)
@@ -182,6 +188,14 @@ class FloatingToast(
         FADE
     }
 
+    fun getBgColor(): Int {
+        return when (alertStyle) {
+            null -> settings.bgColor
+            AlertStyle.ERROR -> BG_COLOR_ERROR
+            else -> BG_COLOR_INFO
+        }
+    }
+
     /**
      * The toast settings
      */
@@ -193,7 +207,7 @@ class FloatingToast(
         val contentPadding: Int = CONTENT_PADDING,
         val textSize: Float = TEXT_SIZE,
         val radii: Float = RADII,
-        val bgColor: Int = BG_COLOR,
+        val bgColor: Int = BG_COLOR_ERROR, // the value ignored if alertStyle is defined
         val textColor: Int = TEXT_COLOR,
         val textGravity: Int = TEXT_GRAVITY,
         val animationMills: Long = ANIMATION_MILLS,
@@ -210,7 +224,8 @@ class FloatingToast(
         private val CONTENT_PADDING: Int = dpToPxI(6)
         private val TEXT_SIZE = dpToPx(15)
         private val RADII = dpToPx(12)
-        private val BG_COLOR = getColorR(R.color.neon_red)
+        private val BG_COLOR_ERROR = getColorR(R.color.neon_red)
+        private val BG_COLOR_INFO = getColorR(R.color.black)
         private val TEXT_COLOR = getColorR(R.color.white)
         private const val TEXT_GRAVITY = Gravity.CENTER
         private const val ANIMATION_MILLS = 200L

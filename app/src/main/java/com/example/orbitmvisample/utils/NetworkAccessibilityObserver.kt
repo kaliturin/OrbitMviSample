@@ -15,6 +15,7 @@ import com.example.orbitmvisample.eventbus.EventBusManager
 import com.example.orbitmvisample.ui.alert.Alert
 import com.example.orbitmvisample.ui.alert.AlertBuilder
 import com.example.orbitmvisample.ui.alert.AlertData
+import com.example.orbitmvisample.ui.alert.AlertData.AlertStyle
 import com.example.orbitmvisample.ui.alert.AlertManager
 import com.example.orbitmvisample.ui.alert.impl.ToastAlertBuilder
 import timber.log.Timber
@@ -60,6 +61,7 @@ class NetworkAccessibilityObserver(
     private fun onNetworkStatusChanged(event: Event.NetworkStatusChanged) {
         if (isNetworkAvailable != event.isAvailable) {
             var alertData = AlertData(
+                alertStyle = if (event.isAvailable) AlertStyle.INFO else AlertStyle.ERROR,
                 messageRes = if (event.isAvailable) R.string.internet_is_available else R.string.internet_is_unavailable,
                 alertBuilder = alertBuilder
             )
@@ -68,9 +70,7 @@ class NetworkAccessibilityObserver(
                 if (oldAlert.isShowing()) oldAlert.hide()
             }
             alertRef = null
-            if (event.isAvailable) {
-                alertData = alertData.copy(durationMills = 1000)
-            }
+            if (event.isAvailable) alertData = alertData.copy(durationMills = 1000)
             val newAlert = alertManager?.showAlert(alertData)
             // save only loosing connection alert
             if (!event.isAvailable) alertRef = WeakReference(newAlert)

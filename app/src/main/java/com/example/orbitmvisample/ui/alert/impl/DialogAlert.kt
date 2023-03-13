@@ -47,7 +47,7 @@ class DialogAlert(
     }
 
     init {
-        val dlgSettings = (alertData.additionalSettings as? Settings)
+        val dlgSettings = (alertData.specificSettings as? Settings)
 
         dialogBuilder = with(alertData) {
             val builder = dlgSettings?.themeResId?.let {

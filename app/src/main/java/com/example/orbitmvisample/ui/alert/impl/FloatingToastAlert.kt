@@ -43,7 +43,8 @@ class FloatingToastAlert(
     }
 
     init {
-        val settings = (alertData.additionalSettings as? FloatingToast.Settings)
-        toast = settings?.let { FloatingToast(parent, it) } ?: FloatingToast(parent)
+        val settings = (alertData.specificSettings as? FloatingToast.Settings)
+        toast = settings?.let { FloatingToast(parent, alertData.alertStyle, it) }
+            ?: FloatingToast(parent, alertData.alertStyle)
     }
 }
