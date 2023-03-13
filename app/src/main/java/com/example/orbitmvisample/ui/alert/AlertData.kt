@@ -7,7 +7,7 @@ import com.example.orbitmvisample.utils.Resources
 /**
  * Alert message data
  */
-class AlertData(
+data class AlertData(
     private val message: CharSequence? = null,      // alert's message
     @StringRes private val messageRes: Int? = null, // alert's message res
     private val title: CharSequence? = null,        // alert's title
@@ -27,7 +27,7 @@ class AlertData(
     val contentView: View? = null,          // alert content view
     val showOnlyIfParentIsResumed: Boolean = true,    // show an alert only if it's parent is resumed
     val alertBuilder: AlertBuilder? = null, // alert builder
-    val additional: Any? = null             // additional alert data
+    val additionalSettings: Any? = null     // additional alert settings
 ) {
     fun getMessage() = message ?: Resources.getString(messageRes)
     fun getTitle() = title ?: Resources.getString(titleRes)

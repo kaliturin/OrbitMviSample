@@ -34,17 +34,17 @@ class AlertManager(
 
     fun showAlert(data: AlertData) = showAlert(context, data)
 
-    fun showAlert(context: Context?, data: AlertData) {
-        context ?: return
+    fun showAlert(context: Context?, data: AlertData): Alert? {
+        context ?: return null
 
         // if parent isn't resumed - don't show the alert
         if (data.showOnlyIfParentIsResumed &&
             context is FragmentActivity &&
             !context.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
-        ) return
+        ) return null
 
         // suppress the  repeating alerts if needed
-        if (timedAlertsContainer.isRepeating(data)) return
+        if (timedAlertsContainer.isRepeating(data)) return null
 
         // build a new alert
         val alert = (data.alertBuilder ?: defAlertBuilder)
@@ -57,8 +57,9 @@ class AlertManager(
         if (!alert.alertListener(alertListener))
             countDownTimeToHideAlert(data.durationMills, alert)
 
-        // show the alert in main thread
-        runOnUiThread { safeCall { alert.show() } }
+        alert.showSafe()
+
+        return alert
     }
 
     private val alertListener = object : AlertListener {
@@ -72,11 +73,10 @@ class AlertManager(
 
     private fun countDownTimeToHideAlert(durationMills: Long, alert: Alert) {
         if (durationMills <= 0L) return
-        timerHandler.removeCallbacksAndMessages(alert.id)
+        //timerHandler.removeCallbacksAndMessages(alert.id)
         timerHandler.postDelayed(durationMills, alert.id) {
             timedAlertsContainer.clean(alert.id)
-            // hide the alert in main thread
-            runOnUiThread { safeCall { alert.hide() } }
+            alert.hideSafe()
         }
     }
 
@@ -93,6 +93,16 @@ class AlertManager(
         } catch (e: Exception) {
             Timber.e(e)
         }
+    }
+
+    // shows alert in main thread
+    private fun Alert.showSafe() {
+        runOnUiThread { safeCall { show() } }
+    }
+
+    // hides alert in main thread
+    private fun Alert.hideSafe() {
+        runOnUiThread { safeCall { hide() } }
     }
 
     companion object {
@@ -130,16 +140,16 @@ private class TimedAlertsContainer {
         showingAlerts.remove(id)
     }
 
-    private fun find(id: AlertData.Id): TimedAlert? {
+    fun find(id: AlertData.Id): TimedAlert? {
         val ref = showingAlerts[id]
         val alert = ref?.get()
         if (ref != null && alert == null) showingAlerts.remove(id)
         return alert
     }
 
-    private class TimedAlert(val time: Long, val alert: Alert)
+    class TimedAlert(val time: Long, val alert: Alert)
 
     companion object {
-        const val MAX_TIMED_ALERTS = 3
+        const val MAX_TIMED_ALERTS = 5
     }
 }

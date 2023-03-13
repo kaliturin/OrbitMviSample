@@ -1,8 +1,13 @@
 package com.example.orbitmvisample.utils
 
+import android.annotation.SuppressLint
+import android.content.res.Configuration.ORIENTATION_PORTRAIT
+import android.os.Build.VERSION
+import android.os.Build.VERSION_CODES
 import android.util.DisplayMetrics
 import androidx.annotation.DimenRes
 import com.example.orbitmvisample.AppContext
+
 
 @Suppress("unused")
 object Dimens {
@@ -33,6 +38,23 @@ object Dimens {
 
     @JvmStatic
     fun getDp(@DimenRes dimensRes: Int): Float = pxToDp(getPx(dimensRes))
+
+    val statusBarHeight by lazy {
+        @SuppressLint("InternalInsetResource", "DiscouragedApi")
+        val id = Resources.r.getIdentifier("status_bar_height", "dimen", "android")
+        if (id > 0) Resources.r.getDimensionPixelSize(id)
+        else if (VERSION.SDK_INT >= VERSION_CODES.M) dpToPxI(24) else dpToPxI(25)
+    }
+
+    val navigationBarHeight: Int
+        get() {
+            val name = if (Resources.r.configuration.orientation == ORIENTATION_PORTRAIT)
+                "navigation_bar_height" else "navigation_bar_height_landscape"
+
+            @SuppressLint("InternalInsetResource", "DiscouragedApi")
+            val id = Resources.r.getIdentifier(name, "dimen", "android")
+            return if (id > 0) Resources.r.getDimensionPixelSize(id) else 0
+        }
 
     private val displayMetrics: DisplayMetrics
         get() = AppContext.resources.displayMetrics

@@ -47,10 +47,10 @@ class DialogAlert(
     }
 
     init {
-        val dlgData = (alertData.additional as? DialogAlertData)
+        val dlgSettings = (alertData.additionalSettings as? Settings)
 
         dialogBuilder = with(alertData) {
-            val builder = dlgData?.themeResId?.let {
+            val builder = dlgSettings?.themeResId?.let {
                 AlertDialog.Builder(context, it)
             } ?: AlertDialog.Builder(context)
                 .setTitle(getTitle())
@@ -99,5 +99,5 @@ class DialogAlert(
         alertData.onOpen?.invoke()
     }
 
-    class DialogAlertData(val themeResId: Int = 0)
+    class Settings(val themeResId: Int = 0)
 }

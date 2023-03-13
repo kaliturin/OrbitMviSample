@@ -12,11 +12,13 @@ import com.example.orbitmvisample.AppContext
 import com.example.orbitmvisample.R
 import com.example.orbitmvisample.eventbus.Event
 import com.example.orbitmvisample.eventbus.EventBusManager
+import com.example.orbitmvisample.ui.alert.Alert
 import com.example.orbitmvisample.ui.alert.AlertBuilder
 import com.example.orbitmvisample.ui.alert.AlertData
 import com.example.orbitmvisample.ui.alert.AlertManager
 import com.example.orbitmvisample.ui.alert.impl.ToastAlertBuilder
 import timber.log.Timber
+import java.lang.ref.WeakReference
 
 /**
  * A network accessibility observer.
@@ -25,13 +27,18 @@ import timber.log.Timber
 class NetworkAccessibilityObserver(
     private val eventBusManager: EventBusManager,
     private val alertManager: AlertManager? = AlertManager.instance,
-    private val alertBuilder: AlertBuilder? = ToastAlertBuilder()
+    private var alertBuilder: AlertBuilder? = ToastAlertBuilder()
 ) {
     private val service =
         AppContext.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
 
     private val debounceHandler = Handler(Looper.getMainLooper())
     private var isRegistered = false
+    private var alertRef: WeakReference<Alert>? = null
+
+    fun setAlertBuilder(alertBuilder: AlertBuilder) = apply {
+        this.alertBuilder = alertBuilder
+    }
 
     /**
      * Starts to observe a network accessibility
@@ -52,15 +59,24 @@ class NetworkAccessibilityObserver(
 
     private fun onNetworkStatusChanged(event: Event.NetworkStatusChanged) {
         if (isNetworkAvailable != event.isAvailable) {
-            alertManager?.showAlert(
-                AlertData(
-                    messageRes = if (event.isAvailable) R.string.internet_is_available else R.string.internet_is_unavailable,
-                    alertBuilder = alertBuilder
-                )
+            var alertData = AlertData(
+                messageRes = if (event.isAvailable) R.string.internet_is_available else R.string.internet_is_unavailable,
+                alertBuilder = alertBuilder
             )
+            alertRef?.get()?.let { oldAlert ->
+                // hide the old alert
+                if (oldAlert.isShowing()) oldAlert.hide()
+            }
+            alertRef = null
+            if (event.isAvailable) {
+                alertData = alertData.copy(durationMills = 1000)
+            }
+            val newAlert = alertManager?.showAlert(alertData)
+            // save only loosing connection alert
+            if (!event.isAvailable) alertRef = WeakReference(newAlert)
+            eventBusManager.post(event)
         }
         isNetworkAvailable = event.isAvailable
-        eventBusManager.post(event)
     }
 
     private fun onNetworkStatusChangeDebounce(network: Network, event: Event.NetworkStatusChanged) {
