@@ -3,7 +3,7 @@ package com.example.orbitmvisample.fetcher
 import com.example.orbitmvisample.apierrorhandler.AppException
 
 /**
- * Holder for responses from [FetcherViewModel]
+ * Holder for responses from ViewModel
  */
 sealed class Response<out T> {
 
@@ -13,14 +13,14 @@ sealed class Response<out T> {
     abstract val info: ResponseInfo
 
     /**
-     * Loading event dispatched by [FetcherViewModel] to signal the [FetcherService] is in progress.
+     * Loading event dispatched by ViewModel to signal the [FetcherService] is in progress.
      */
     data class Loading(
         override val info: ResponseInfo
     ) : Response<Nothing>()
 
     /**
-     * Data dispatched by [FetcherViewModel]
+     * Data dispatched by ViewModel
      */
     data class Data<T>(
         override val info: ResponseInfo,
@@ -28,7 +28,7 @@ sealed class Response<out T> {
     ) : Response<T>()
 
     /**
-     * No new data event dispatched by [FetcherViewModel] to signal the [FetcherService] returned no data (i.e the
+     * No new data event dispatched by ViewModel to signal the [FetcherService] returned no data (i.e the
      * returned [kotlinx.coroutines.flow.Flow], when collected, was empty).
      */
     data class NoNewData(
@@ -51,7 +51,7 @@ sealed class Response<out T> {
     }
 
     /**
-     * Cancelled event dispatched by [FetcherViewModel] to signal the correspondent request was cancelled.
+     * Cancelled event dispatched by ViewModel to signal the correspondent request was cancelled.
      */
     data class Cancelled(
         override val info: ResponseInfo

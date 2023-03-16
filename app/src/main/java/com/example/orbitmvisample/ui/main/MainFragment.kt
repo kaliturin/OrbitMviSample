@@ -3,12 +3,13 @@ package com.example.orbitmvisample.ui.main
 import android.os.Bundle
 import android.view.View
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import com.example.orbitmvisample.R
 import com.example.orbitmvisample.di.IntViewModel
 import com.example.orbitmvisample.fetcher.Response
 import com.example.orbitmvisample.service.IntFetcherService
+import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.viewModel
-import org.orbitmvi.orbit.viewmodel.observe
 import timber.log.Timber
 
 class MainFragment : Fragment(R.layout.fragment_main) {
@@ -19,10 +20,11 @@ class MainFragment : Fragment(R.layout.fragment_main) {
 
         view.findViewById<View>(R.id.button).setOnClickListener {
             val args = IntFetcherService.Arguments(100)
-            viewModel
-                //.suppressAlerts()
-                .ignorePendingRequests()
-                .request(args, context)
+            lifecycleScope.launch {
+                viewModel
+                    .ignorePendingRequests()
+                    .request(args, context)
+            }
         }
 
         viewModel.observe(viewLifecycleOwner, state = ::render)

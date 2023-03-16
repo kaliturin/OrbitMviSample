@@ -2,16 +2,17 @@ package com.example.orbitmvisample.fetcher
 
 import android.content.Context
 import android.os.Bundle
-import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.lifecycleScope
 import com.appmattus.layercache.Cache
 import com.example.orbitmvisample.apierrorhandler.AppErrorHandler
 import com.example.orbitmvisample.apierrorhandler.AppException
 import com.example.orbitmvisample.cache.CacheKeyBuilder
 import com.example.orbitmvisample.cache.CacheKeyBuilderDefault
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.MutableStateFlow
+import org.orbitmvi.orbit.ContainerHost
+import org.orbitmvi.orbit.syntax.simple.intent
+import org.orbitmvi.orbit.syntax.simple.reduce
+import org.orbitmvi.orbit.viewmodel.container
 import timber.log.Timber
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
@@ -20,12 +21,14 @@ import java.util.concurrent.atomic.AtomicLong
  * VM with data fetching service and optional cache service
  */
 @Suppress("unused")
-open class FetcherViewModel<T : Any>(
+open class OrbitFetcherViewModel<T : Any>(
     private val fetcherService: FetcherService<T>,
     private val errorHandler: AppErrorHandler? = null,
     private val cacheService: Cache<Any, T>? = null,
     private var cacheKeyBuilder: CacheKeyBuilder = CacheKeyBuilderDefault(fetcherService::class.qualifiedName)
-) : ViewModel() {
+) : ViewModel(), ContainerHost<Response<T>, Nothing> {
+
+    override val container = container<Response<T>, Nothing>(Response.NoNewData())
 
     private val fetcherRequests = PendingRequests<T>()
     private val cacheRequests = PendingRequests<T>()
@@ -33,7 +36,6 @@ open class FetcherViewModel<T : Any>(
     private val requestCounter = AtomicLong(0)
     private var errorHandlerSettings: Bundle? = null
     private var cancelPendingRequestsOnClearedVM = true
-    private val stateFlow = MutableStateFlow<Response<T>>(Response.NoNewData())
 
     /**
      * Injects settings for AppErrorHandler
@@ -77,30 +79,20 @@ open class FetcherViewModel<T : Any>(
     }
 
     /**
-     * Observes the VM to collect [Response] states
-     */
-    fun observe(
-        viewLifecycleOwner: LifecycleOwner,
-        state: (suspend (Response<T>) -> Unit)
-    ) {
-        viewLifecycleOwner.lifecycleScope.launch {
-            stateFlow.collect(state)
-        }
-    }
-
-    /**
      * Requests the VM to start emitting [Response] states
      * @param arguments arguments of [FetcherService]
      * @param context may be used in error handler component to show some default alerts
      * @param cleanCache if true - then removes a value from the cache before fetching it from [FetcherService]
      * @param refreshCache if true - then after response from cache VM trying to fetch a value from [FetcherService]
      */
-    suspend fun request(
+    @Synchronized
+    fun request(
         arguments: FetcherArguments<T> = FetcherArgumentsDefault(),
         context: Context? = null,
         cleanCache: Boolean = false,
         refreshCache: Boolean = false
-    ) {
+    ) = intent {
+
         var cacheRefreshingStared = false
 
         // build a response info
@@ -119,7 +111,7 @@ open class FetcherViewModel<T : Any>(
             if (checkIfTheSameRequestIsPending(
                     cacheInfo, cacheRequests, requestId, key, false
                 )
-            ) return
+            ) return@intent
 
             // get a value from the cache
             val value = try {
@@ -134,8 +126,8 @@ open class FetcherViewModel<T : Any>(
             } catch (e: Exception) {
                 // cancellation of the request
                 if (e is CancellationException) {
-                    stateFlow.emit(Response.Cancelled(cacheInfo))
-                    return
+                    reduce { Response.Cancelled(cacheInfo) }
+                    return@intent
                 } else {
                     Timber.e(e, "Error on cache value getting with key=$key")
                     null
@@ -145,21 +137,21 @@ open class FetcherViewModel<T : Any>(
             }
             value?.let {
                 // response with the value from cache
-                stateFlow.emit(Response.Data(cacheInfo, it))
-                if (refreshCache) cacheRefreshingStared = true else return
+                reduce { Response.Data(cacheInfo, it) }
+                if (refreshCache) cacheRefreshingStared = true else return@intent
             }
         }
 
         val fetcherInfo = responseInfo.copy(origin = ResponseOrigin.Fetcher)
 
         if (!cacheRefreshingStared) {
-            stateFlow.emit(Response.Loading(fetcherInfo)) // response with the loading state
+            reduce { Response.Loading(fetcherInfo) } // response with the loading state
         }
 
         if (checkIfTheSameRequestIsPending(
                 fetcherInfo, fetcherRequests, requestId, key, true
             )
-        ) return
+        ) return@intent
 
         // request a value from the fetcher
         val value = try {
@@ -174,16 +166,16 @@ open class FetcherViewModel<T : Any>(
         } catch (e: Exception) {
             // cancellation of the request
             if (e is CancellationException) {
-                stateFlow.emit(Response.Cancelled(fetcherInfo))
+                reduce { Response.Cancelled(fetcherInfo) }
             } else {
                 Timber.e(e, "Error on requesting to fetcher with args=$arguments")
                 // convert the exception to ApiException and handle it by default
                 val appException = errorHandler?.handle(e, context, errorHandlerSettings)
                     ?: AppException(cause = e)
                 // then response with the error on data fetching
-                stateFlow.emit(Response.Error.Exception(appException, fetcherInfo))
+                reduce { Response.Error.Exception(appException, fetcherInfo) }
             }
-            return
+            return@intent
         } finally {
             fetcherRequests.clean(requestId, key)
         }
@@ -218,11 +210,15 @@ open class FetcherViewModel<T : Any>(
         }
     }
 
-    private suspend fun responseWithValue(
+    private fun responseWithValue(
         responseInfo: ResponseInfo, pendingRequests: PendingRequests<T>, value: T?
-    ) {
-        if (!pendingRequests.isIgnored(responseInfo.requestId)) // response if request id isn't in the ignored list
-            stateFlow.emit(Response.Data(responseInfo, value))
+    ) = intent {
+        reduce {
+            if (pendingRequests.isIgnored(responseInfo.requestId)) // if request id is in the ignored list
+                state // response with the current state
+            else
+                Response.Data(responseInfo, value)
+        }
     }
 
     // If the same request was already started - responses with its result
