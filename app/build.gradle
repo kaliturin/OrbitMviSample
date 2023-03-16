@@ -82,8 +82,9 @@ dependencies {
     implementation "com.appmattus.layercache:layercache-serializer:$layercache_version"
     implementation "com.appmattus.layercache:layercache-android-encryption:$layercache_version"
 
-    implementation "org.cache2k:cache2k-core:2.2.1.Final"
-    implementation "org.cache2k:cache2k-api:2.2.1.Final"
+    def cache2k_version = "2.2.1.Final"
+    implementation "org.cache2k:cache2k-core:$cache2k_version"
+    implementation "org.cache2k:cache2k-api:$cache2k_version"
 
     def orbit_mvi_version = "4.5.0"
     implementation "org.orbit-mvi:orbit-core:$orbit_mvi_version"
@@ -99,9 +100,13 @@ dependencies {
     implementation "androidx.datastore:datastore-preferences:1.0.0"
     implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1'
 
-    def eventbus_version = '3.3.1'
+    def eventbus_version = "3.3.1"
     implementation "org.greenrobot:eventbus:$eventbus_version"
     kapt "org.greenrobot:eventbus-annotation-processor:$eventbus_version"
 
     implementation "com.jakewharton:disklrucache:2.0.2"
+
+    def okhttp3_version = "4.10.0"
+    implementation "com.squareup.okhttp3:okhttp:$okhttp3_version"
+    implementation "com.squareup.okhttp3:logging-interceptor:$okhttp3_version"
 }

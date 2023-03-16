@@ -1,6 +1,5 @@
 package com.example.orbitmvisample.apierrorhandler.impl
 
-import android.content.res.Resources
 import androidx.annotation.StringRes
 import androidx.annotation.WorkerThread
 import com.example.orbitmvisample.BuildConfig
@@ -11,6 +10,7 @@ import com.example.orbitmvisample.apierrorhandler.AppException
 import com.example.orbitmvisample.apierrorhandler.AppExceptionBuilder
 import com.example.orbitmvisample.apierrorhandler.impl.AppExceptionBuilderImpl.AppErrorMessage.*
 import com.example.orbitmvisample.utils.JsonUtils
+import com.example.orbitmvisample.utils.Resources
 import com.fasterxml.jackson.databind.JsonMappingException
 import retrofit2.HttpException
 import timber.log.Timber
@@ -19,7 +19,7 @@ import java.net.SocketTimeoutException
 import java.net.UnknownHostException
 import javax.net.ssl.SSLException
 
-class AppExceptionBuilderImpl(private val resources: Resources) : AppExceptionBuilder {
+class AppExceptionBuilderImpl : AppExceptionBuilder {
 
     override suspend fun build(throwable: Throwable): AppException {
         return when (throwable) {
@@ -85,12 +85,12 @@ class AppExceptionBuilderImpl(private val resources: Resources) : AppExceptionBu
         MSG_CONNECTION_ERROR(R.string.error_connection_error),
         MSG_ERROR_HAPPENED(R.string.error_happened);
 
-        fun toString(resources: Resources): String {
-            return resources.getString(stringRes)
+        override fun toString(): String {
+            return Resources.getString(stringRes)
         }
     }
 
-    private val AppErrorMessage.str get() = this.toString(resources)
+    private val AppErrorMessage.str get() = this.toString()
 
     companion object {
         private const val GATEWAY_TIMEOUT_CODE = 504

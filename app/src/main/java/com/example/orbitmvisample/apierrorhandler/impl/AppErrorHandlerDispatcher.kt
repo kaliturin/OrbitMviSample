@@ -15,7 +15,7 @@ import timber.log.Timber
  * @param handlers upper level handlers that receives the already built [AppException]
  */
 class AppErrorHandlerDispatcher(
-    private val builder: AppExceptionBuilder,
+    private val builder: AppExceptionBuilder = AppExceptionBuilderImpl(),
     private vararg val handlers: AppErrorHandler
 ) : AppErrorHandler {
 
