@@ -51,6 +51,12 @@ object Resources {
     @JvmStatic
     @JvmOverloads
     fun getDrawableR(
+        @DrawableRes drawableRes: Int, mutate: Boolean = false
+    ) = getDrawableR(context, drawableRes, mutate)
+
+    @JvmStatic
+    @JvmOverloads
+    fun getDrawableR(
         context: Context?, @DrawableRes drawableRes: Int, mutate: Boolean = false
     ) = context.getDrawableR(drawableRes, mutate)
 
