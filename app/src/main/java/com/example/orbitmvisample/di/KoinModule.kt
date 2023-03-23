@@ -20,15 +20,12 @@ import com.example.orbitmvisample.service.IntFetcherService
 import com.example.orbitmvisample.ui.alert.AlertManager
 import com.example.orbitmvisample.ui.alert.impl.DialogAlertBuilder
 import com.example.orbitmvisample.utils.NetworkAccessibilityObserver
-import com.example.orbitmvisample.websocket.WebSocketFlow
-import com.example.orbitmvisample.websocket.impl.StringResponseDeserializer
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
-import java.util.concurrent.TimeUnit
 
 typealias IntViewModel = FetcherViewModel<Int>
 
@@ -43,21 +40,6 @@ object KoinModule {
                         setLevel(HttpLoggingInterceptor.Level.BODY)
                     })
                 .build()
-        }
-
-        // WebSocket
-        single {
-            val settings = WebSocketFlow.SocketSettings(
-                socketUrl = "ws://192.168.0.10:1337", // local echo server IP (for example https://github.com/websockets/websocket-echo-server)
-                silenceTimeoutMills = 20_000L
-            )
-            val socketFactory = get<OkHttpClient>()
-                .newBuilder()
-                .readTimeout(settings.readTimeoutMills, TimeUnit.MILLISECONDS)
-                .pingInterval(settings.pingTimeoutMills, TimeUnit.MILLISECONDS)
-                .build()
-            val deserializer = StringResponseDeserializer()
-            WebSocketFlow(settings, socketFactory, deserializer)
         }
 
         single { CacheBuilderProvider(androidContext()) }

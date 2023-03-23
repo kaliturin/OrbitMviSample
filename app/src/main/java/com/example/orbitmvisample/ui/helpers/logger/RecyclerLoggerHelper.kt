@@ -1,0 +1,49 @@
+package com.example.orbitmvisample.ui.helpers.logger
+
+import android.util.Log
+import androidx.core.view.postDelayed
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.xwray.groupie.GroupAdapter
+import com.xwray.groupie.GroupieViewHolder
+import timber.log.Timber
+
+class RecyclerLoggerHelper(
+    private val recyclerView: RecyclerView,
+    private val prefix: String = "",
+    private val withThreadId: Boolean = false
+) {
+    private val adapter = GroupAdapter<GroupieViewHolder>()
+
+    init {
+        recyclerView.adapter = adapter
+    }
+
+    private fun RecyclerView.isLastItemVisible(): Boolean {
+        return (layoutManager as LinearLayoutManager)
+            .findLastCompletelyVisibleItemPosition() + 2 >= (adapter?.itemCount ?: 0)
+    }
+
+    fun v(message: String) = log(message, Log.VERBOSE)
+    fun d(message: String) = log(message, Log.DEBUG)
+    fun i(message: String) = log(message, Log.INFO)
+    fun w(message: String) = log(message, Log.WARN)
+    fun e(message: String) = log(message, Log.ERROR)
+    fun a(message: String) = log(message, Log.ASSERT)
+
+    fun log(message: String, level: Int = Log.DEBUG) {
+        val threadId = if (withThreadId) "(thread=${Thread.currentThread().id})" else ""
+        val formatted = "$prefix$threadId $message"
+        Timber.d(formatted)
+        log(LogMessage(formatted, level))
+    }
+
+    fun log(logMessage: LogMessage) {
+        adapter.add(LogListItem(logMessage))
+        with(recyclerView) {
+            if (isLastItemVisible()) postDelayed(100) {
+                smoothScrollToPosition(this@RecyclerLoggerHelper.adapter.itemCount)
+            }
+        }
+    }
+}

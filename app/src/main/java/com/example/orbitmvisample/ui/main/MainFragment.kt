@@ -4,21 +4,27 @@ import android.os.Bundle
 import android.view.View
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
+import by.kirich1409.viewbindingdelegate.viewBinding
 import com.example.orbitmvisample.R
+import com.example.orbitmvisample.databinding.FragmentMainBinding
 import com.example.orbitmvisample.di.IntViewModel
 import com.example.orbitmvisample.fetcher.Response
 import com.example.orbitmvisample.service.IntFetcherService
+import com.example.orbitmvisample.ui.helpers.logger.RecyclerLoggerHelper
 import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.viewModel
-import timber.log.Timber
 
 class MainFragment : Fragment(R.layout.fragment_main) {
+    private val binding by viewBinding(FragmentMainBinding::bind)
     private val viewModel: IntViewModel by viewModel()
+    private lateinit var log: RecyclerLoggerHelper
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        view.findViewById<View>(R.id.button).setOnClickListener {
+        log = RecyclerLoggerHelper(binding.logRecyclerView)
+
+        binding.button.setOnClickListener {
             val args = IntFetcherService.Arguments(100)
             lifecycleScope.launch {
                 viewModel
@@ -35,17 +41,17 @@ class MainFragment : Fragment(R.layout.fragment_main) {
         val origin = response.info.origin
         when (response) {
             is Response.Loading -> {
-                Timber.d("Id=$id loading started")
+                log.d("Request id=$id loading started")
             }
             is Response.Data -> {
-                Timber.w("Id=$id loading finished from $origin")
-                Timber.w("Data: ${response.value}")
+                log.i("Request id=$id loading finished from $origin")
+                log.i("Data: ${response.value}")
             }
             is Response.Error -> {
-                Timber.e("Id=$id error on loading from $origin")
+                log.e("Request id=$id error on loading from $origin")
             }
             is Response.Cancelled -> {
-                Timber.e("Id=$id cancelled from $origin")
+                log.e("Request id=$id cancelled from $origin")
             }
             else -> {
             }

@@ -109,4 +109,11 @@ dependencies {
     def okhttp3_version = "4.10.0"
     implementation "com.squareup.okhttp3:okhttp:$okhttp3_version"
     implementation "com.squareup.okhttp3:logging-interceptor:$okhttp3_version"
+
+    implementation 'com.github.kirich1409:viewbindingpropertydelegate-noreflection:1.5.6'
+
+    def groupie_version = "2.10.1"
+    implementation "com.github.lisawray.groupie:groupie:$groupie_version"
+    implementation "com.github.lisawray.groupie:groupie-viewbinding:$groupie_version"
+    implementation "com.github.lisawray.groupie:groupie-databinding:$groupie_version"
 }
