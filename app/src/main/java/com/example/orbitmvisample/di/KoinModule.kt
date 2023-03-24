@@ -52,6 +52,7 @@ object KoinModule {
             )
         }
 
+        // LayerCache
         single(named("layerCache")) {
             val memoryCache = get<CacheManager>().get<Int>(CACHE_10_SEC)
             val persistCache = get<CacheManager>().get<Int>(CACHE_15_SEC)
@@ -65,6 +66,7 @@ object KoinModule {
             )
         }
 
+        // Events
         single {
             EventTimeoutManager()
                 .register<Event.TechnicalWorks>()
